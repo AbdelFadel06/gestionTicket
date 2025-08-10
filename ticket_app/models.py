@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 class Role(models.Model):
@@ -11,12 +13,12 @@ class Role(models.Model):
 
 
 
-class Utilisateur(AbstractUser):
+class User(AbstractUser):
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
     fullname = models.CharField(max_length=50)
     email = models.EmailField(unique=True)
-    profil_picture = models.ImageField(null=True, blank=True, upload_to='images/profils/')
-
+    profile_picture = models.ImageField(null=True, blank=True, upload_to='images/profils/')
+    
 
     def __str__(self):
         return self.fullname
@@ -59,21 +61,31 @@ class Ticket(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def save(self, *args, **kwargs):
+        if self.status == 'closed' and not self.closed_at:
+            self.closed_at = timezone.now()
+        super().save(*args, **kwargs)
 
 
 
-class Commentaire(models.Model):
+class Comment(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
-    utilisateur =  models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL, null=True)
+    user =  models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL, null=True, related_name="comments")
 
     
 
-class Piece_jointe(models.Model):
+class Attachment(models.Model):
     title = models.CharField(max_length=100)
-    image_url = models.ImageField(null=True, blank=True)
-    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
+    file_url = models.FileField(null=True, blank=True, upload_to="attachment/")
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True)
 
 
-
+    def clean(self):
+        if not (self.ticket or self.comment):
+            raise ValidationError("L'attachment doit être lié à un Ticket ou un Commentaire.")
+        if self.ticket and self.comment:
+            raise ValidationError("L'attachment ne peut être lié qu'à un seul objet (Ticket OU Commentaire).")
