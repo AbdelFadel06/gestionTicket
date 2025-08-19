@@ -1,45 +1,48 @@
-from django.urls import path, include, re_path
+from django.urls import path
 from rest_framework.routers import DefaultRouter
-from .views import (
-    TicketListCreateView,
-    TicketDetailView,
-    CommentListCreateView,
-    AttachmentListCreateView
-)
+# from .views import (
+#     TicketListCreateView,
+#     TicketDetailView,
+#     CommentListCreateView,
+#     AttachmentListCreateView
+# )
+
+from .views.attachment import AttachmentListCreateView
+from .views.ticket import TicketDetailView,TicketListCreateView
+from .views.comment import CommentListCreateView
+
 from rest_framework.authtoken.views import obtain_auth_token
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
-from rest_framework import permissions
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
+
 router = DefaultRouter()
 
-
-schema_view = get_schema_view(
-    openapi.Info(
-        title="API Tickets",
-        default_version='v1',
-        description="Documentation de l'API de gestion des tickets",
-        terms_of_service="https://www.example.com/terms/",
-        contact=openapi.Contact(email="contact@example.com"),
-        license=openapi.License(name="MIT License"),
-    ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
-
-
 urlpatterns = [
+    # Auth
     path('api/login/', obtain_auth_token, name='api-login'),
+
+    # Tickets
     path('tickets/', TicketListCreateView.as_view(), name='ticket-list'),
     path('tickets/<int:pk>/', TicketDetailView.as_view(), name='ticket-detail'),
-    
-    path('tickets/<int:ticket_id>/comments/', 
-         CommentListCreateView.as_view(), 
+
+    # Comments & Attachments
+    path('tickets/<int:ticket_id>/comments/',
+         CommentListCreateView.as_view(),
          name='ticket-comments'),
-    
-    path('tickets/<int:ticket_id>/attachments/', 
-         AttachmentListCreateView.as_view(), 
+
+    path('tickets/<int:ticket_id>/attachments/',
+         AttachmentListCreateView.as_view(),
          name='ticket-attachments'),
-    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+
+    # OpenAPI schema (JSON)
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
+
+    # Swagger UI
+    path("swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+
+    # Redoc UI
+    path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]
