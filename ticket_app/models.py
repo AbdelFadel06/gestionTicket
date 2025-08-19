@@ -14,14 +14,14 @@ class Role(models.Model):
 
 
 class User(AbstractUser):
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
+    role = models.ForeignKey(Role, on_delete=models.PROTECT, null=True)
     fullname = models.CharField(max_length=50)
     email = models.EmailField(unique=True)
     profile_picture = models.ImageField(null=True, blank=True, upload_to='images/profils/')
     
 
     def __str__(self):
-        return self.fullname
+        return f"{self.fullname} ({self.role})"
 
 
 class Ticket(models.Model):
@@ -44,9 +44,9 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     closed_at = models.DateTimeField(null=True, blank=True)
-    user = models.ForeignKey(
+    client = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         related_name='tickets_client'
     )
@@ -60,12 +60,17 @@ class Ticket(models.Model):
 
 
     def __str__(self):
-        return self.title
+        return f"{self.title} ({self.get_status_display()})"
     
     def save(self, *args, **kwargs):
         if self.status == 'closed' and not self.closed_at:
             self.closed_at = timezone.now()
+        elif self.status != 'closed' and self.closed_at:
+            self.closed_at = None
         super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['-created_at']
 
 
 
@@ -73,13 +78,19 @@ class Comment(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
-    user =  models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL, null=True, related_name="comments")
+    author =  models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE, related_name="comments")
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Commentaire par {self.author} sur {self.ticket}"
 
     
 
 class Attachment(models.Model):
     title = models.CharField(max_length=100)
-    file_url = models.FileField(null=True, blank=True, upload_to="attachment/")
+    file = models.FileField(null=True,max_length=255,  blank=True, upload_to="attachment/")
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True)
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True)
 
