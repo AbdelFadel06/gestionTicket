@@ -8,16 +8,23 @@ from .permissions import IsTicketOwnerOrAdmin
 class TicketListCreateView(generics.ListCreateAPIView):
     serializer_class = TicketSerializer
     permission_classes = [permissions.IsAuthenticated]
+    search_fields = ['title']
+    filterset_fields = ['priority','status']
 
     def get_queryset(self):
         user = self.request.user
-        if user.role.title == 'admin':
+
+
+        if user.is_superuser or (hasattr(user, 'role') and user.role.title == 'admin'):
             return Ticket.objects.all()
-        elif user.role.title == 'developer':
+
+        elif hasattr(user, 'role') and user.role.title == 'developer':
             return Ticket.objects.filter(
                 Q(developer=user) | Q(developer__isnull=True)
             )
+
         return Ticket.objects.filter(client=user)
+
     def perform_create(self, serializer):
         serializer.save(client=self.request.user)
 

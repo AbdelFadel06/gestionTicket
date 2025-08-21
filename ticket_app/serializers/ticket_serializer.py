@@ -1,15 +1,12 @@
 from rest_framework import serializers
 from ..models.ticket import Ticket
+from ..models.attachment import Attachment
+from ticket_app.serializers.attachment_serializer import AttachmentSerializer
 
 class TicketSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(
-        source='get_status_display',
-        read_only=True
-    )
-    priority_display = serializers.CharField(
-        source='get_priority_display',
-        read_only=True
-    )
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
+    attachments = AttachmentSerializer(many=True, required=False)
 
     class Meta:
         model = Ticket
@@ -18,6 +15,10 @@ class TicketSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = self.context['request'].user
+
+        if user.is_superuser:
+          return data
+
 
         if user.role.title == 'client' and data.get('developer') is not None:
             raise serializers.ValidationError(
@@ -35,12 +36,18 @@ class TicketSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        attachments_data = validated_data.pop('attachments', [])
         validated_data['client'] = self.context['request'].user
 
         if validated_data['client'].role.title == 'client':
             validated_data['developer'] = None
 
-        return super().create(validated_data)
+        ticket = super().create(validated_data)
+
+        for attachment_data in attachments_data:
+            Attachment.objects.create(ticket=ticket, **attachment_data)
+
+        return ticket
 
     def update(self, instance, validated_data):
         user = self.context['request'].user

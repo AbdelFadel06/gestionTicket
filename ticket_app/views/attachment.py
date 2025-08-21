@@ -7,6 +7,8 @@ from ..serializers.attachment_serializer import AttachmentSerializer
 class AttachmentListCreateView(generics.ListCreateAPIView):
     serializer_class = AttachmentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    search_fields = ['title']
+    filterset_fields = ['title','ticket','comment']
 
     def get_queryset(self):
         ticket_id = self.kwargs.get('ticket_id')

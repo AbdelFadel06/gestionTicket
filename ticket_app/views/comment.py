@@ -7,6 +7,8 @@ from ..serializers.comment_serializer import CommentSerializer
 class CommentListCreateView(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    search_fields = ['author', 'ticket']
+    filterset_fields = ['author', 'ticket']
 
     def get_queryset(self):
         ticket_id = self.kwargs.get('ticket_id')

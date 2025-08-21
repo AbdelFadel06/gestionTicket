@@ -1,13 +1,16 @@
 from rest_framework import serializers
 from ..models.comment import Comment
+from ..models.attachment import Attachment
+from ticket_app.serializers.attachment_serializer import AttachmentSerializer
 
 class CommentSerializer(serializers.ModelSerializer):
     author_info = serializers.SerializerMethodField()
+    attachments = AttachmentSerializer(many=True, required=False)
+
     class Meta:
         model = Comment
         fields = [
-            'id', 'content', 'created_at',
-            'ticket', 'author', 'author_info'
+            'id', 'content', 'created_at', 'ticket', 'author', 'author_info', 'attachments'
         ]
         read_only_fields = ['created_at', 'author', 'ticket']
 
@@ -19,5 +22,11 @@ class CommentSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        attachments_data = validated_data.pop('attachments', [])
         validated_data['author'] = self.context['request'].user
-        return super().create(validated_data)
+        comment = super().create(validated_data)
+
+        for attachment_data in attachments_data:
+            Attachment.objects.create(comment=comment, **attachment_data)
+
+        return comment

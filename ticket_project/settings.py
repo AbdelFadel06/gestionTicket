@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'drf_spectacular',
 
@@ -81,25 +82,89 @@ WSGI_APPLICATION = 'ticket_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'ticket_db',
+        'USER': 'ticket_user',
+        'PASSWORD': 'ticket',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
 
+
+
+import sys
+import colorlog
+import logging
+
+
+class SQLFormatter(colorlog.ColoredFormatter):
+    def format(self, record):
+        message = record.getMessage()
+
+        sql_keywords = {
+            "SELECT": "bold_blue",
+            "INSERT": "bold_green",
+            "UPDATE": "bold_yellow",
+            "DELETE": "bold_red",
+            "FROM": "cyan",
+            "WHERE": "magenta",
+            "JOIN": "bold_cyan",
+            "ORDER BY": "white",
+            "GROUP BY": "white",
+        }
+
+
+        for keyword, color in sql_keywords.items():
+            message = message.replace(
+                keyword,
+                self.colorize(keyword, color)
+            )
+
+        record.msg = message
+        return super().format(record)
+
+    def colorize(self, text, color):
+        c = colorlog.escape_codes.parse_colors(color)
+        return f"{c}{text}{colorlog.escape_codes.reset}"
+
+
+
+
 LOGGING = {
     'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'colored_sql': {
+            '()': 'colorlog.ColoredFormatter',
+            'format': '%(cyan)s%(message)s%(reset)s',
+        },
+    },
+
     'handlers': {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
+            'formatter': 'colored_sql',
         },
     },
+
     'loggers': {
         'django.db.backends': {
             'level': 'DEBUG',
             'handlers': ['console'],
+            'propagate': False,
         },
     },
 }
@@ -127,8 +192,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',  # Pour le navigateur
-        'rest_framework.authentication.BasicAuthentication',    # Pour les tests simples
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
