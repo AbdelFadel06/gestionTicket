@@ -10,7 +10,7 @@ from ticket_app.validators.file_validators import validate_file_size
 class TicketCreateSerializer(serializers.ModelSerializer):
     # file = AttachmentSerializer(required=False)
     author = UserSerializer(read_only=True)
-    file = serializers.FileField(required=False, validators=[FileExtensionValidator(['png','jpeg','jpg']), validate_file_size])
+    file = serializers.FileField(required=False, validators=[FileExtensionValidator(['png','jpeg','jpg','pdf','txt']), validate_file_size])
     class Meta:
         model = Ticket
         fields = 'id','title','description','priority','file','author'

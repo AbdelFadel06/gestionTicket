@@ -267,7 +267,7 @@ class CommentCreateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins
         }, status=status.HTTP_200_OK)
 
  
-@api_view(['PATCH', 'GET'])
+@api_view(['PATCH'])
 @permission_classes([permissions.IsAuthenticated, AcceptPermission])
 def accepted(request, pk=None):
     # return Response("Yooo")
@@ -290,7 +290,7 @@ def accepted(request, pk=None):
         "data": serializer.data
     }, status=status.HTTP_200_OK)
 
-@api_view(['GET', 'PATCH'])
+@api_view(['PATCH'])
 @permission_classes([permissions.IsAuthenticated, ClosePermission])
 def closed(request, pk=None):
     try:
@@ -307,7 +307,7 @@ def closed(request, pk=None):
         "data": serializer.data,
     }, status=status.HTTP_200_OK)
 
-@api_view(['GET', 'PATCH'])
+@api_view(['PATCH'])
 @permission_classes([permissions.IsAuthenticated, IsRealDeveloper])
 def setstatus(request, pk=None):
     try:
@@ -327,7 +327,7 @@ def setstatus(request, pk=None):
         "data": serializer.data
     }, status=status.HTTP_200_OK)
 
-@api_view(['GET', 'DELETE'])
+@api_view(['DELETE'])
 @permission_classes([permissions.IsAuthenticated, IsCommentAuthor])
 def retrieveDestroyComment(request, pk=None):
     try:

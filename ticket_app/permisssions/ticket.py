@@ -47,10 +47,8 @@ class AcceptPermission(permissions.BasePermission):
         
         if request.method == 'PATCH':
             if IsDeveloper().has_permission(request, view):
-                return not obj.developer or obj.developer_id == request.user.id
+                return obj.developer is None or obj.developer_id == request.user.id
             return False
-            # else:
-            #     return request.user.is_superuser
         return True
     def has_object_permission(self, request, view, obj):
         return obj.developer_id != request.user.id
