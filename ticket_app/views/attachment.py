@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from ..models.attachment import Attachment
+from ticket_app.models import Attachment
 from rest_framework import generics, permissions
-from ..serializers.attachment_serializer import AttachmentSerializer
+from ticket_app.serializers import AttachmentSerializer
 
 
 class AttachmentListCreateView(generics.ListCreateAPIView):

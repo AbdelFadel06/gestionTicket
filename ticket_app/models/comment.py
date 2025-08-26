@@ -5,8 +5,8 @@ from django.conf import settings
 class Comment(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
-    author =  models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE, related_name="comments")
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="comments")
+    author =  models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="comments")
 
     class Meta:
         ordering = ['created_at']

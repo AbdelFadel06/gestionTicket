@@ -1,66 +1,67 @@
 from rest_framework import serializers
-from ..models.ticket import Ticket
-from ..models.attachment import Attachment
-from ticket_app.serializers.attachment_serializer import AttachmentSerializer
+from ticket_app.models import Ticket
+from django.utils import timezone
+from .user_serializer import UserSerializer
+from .comment_serializer import CommentRetrieveSerializer
+from .attachment_serializer import AttachmentSerializer
+from django.core.validators import FileExtensionValidator
+from ticket_app.validators.file_validators import validate_file_size
 
-class TicketSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
-    attachments = AttachmentSerializer(many=True, required=False)
+class TicketCreateSerializer(serializers.ModelSerializer):
+    # file = AttachmentSerializer(required=False)
+    author = UserSerializer(read_only=True)
+    file = serializers.FileField(required=False, validators=[FileExtensionValidator(['png','jpeg','jpg']), validate_file_size])
+    class Meta:
+        model = Ticket
+        fields = 'id','title','description','priority','file','author'
+        read_only_fields = 'id',
+        extra_kwargs = {
+            'file': {'many': True},
+        }
 
+    def validate_priority(self, value):
+        if not value:
+            return 'basse'
+        return value
+    
+    def create(self, validated_data):
+        file = None
+        if 'file' in validated_data:
+            file = validated_data.pop('file')
+        obj = super().create(validated_data)
+        if file is not None:
+            obj.attachments.create(file=file, title=file.name)
+        return obj
+
+class TicketRetrieveSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    developer = UserSerializer(read_only=True)
+    comments = CommentRetrieveSerializer(many=True, read_only=True)
+    class Meta:
+        model = Ticket
+        fields = "__all__"
+        extra_kwargs = {
+            'created_at': {
+                # 'format': '%Y',
+                # 'length': 10,
+                'read_only': True
+            },
+            'closed_at': {
+                'read_only': True
+            },
+        }
+        read_only_fields = 'status','updated_at',
+
+class TicketStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = '__all__'
-        read_only_fields = ['created_at', 'updated_at', 'closed_at', 'client']
-
-    def validate(self, data):
-        user = self.context['request'].user
-
-        if user.is_superuser:
-          return data
-
-
-        if user.role.title == 'client' and data.get('developer') is not None:
-            raise serializers.ValidationError(
-                "Seuls les administrateurs peuvent assigner un développeur."
-            )
-
-        developer = data.get('developer')
-        if developer is not None:
-            role_title = getattr(developer.role, 'title', None)
-            if role_title != 'developer':
-                raise serializers.ValidationError(
-                    "Le développeur assigné doit avoir le rôle 'developer'."
-                )
-
-        return data
-
-    def create(self, validated_data):
-        attachments_data = validated_data.pop('attachments', [])
-        validated_data['client'] = self.context['request'].user
-
-        if validated_data['client'].role.title == 'client':
-            validated_data['developer'] = None
-
-        ticket = super().create(validated_data)
-
-        for attachment_data in attachments_data:
-            Attachment.objects.create(ticket=ticket, **attachment_data)
-
-        return ticket
+        read_only_fields = 'title','description','priority','author','developer','created_at','updated_at','closed_at',
 
     def update(self, instance, validated_data):
-        user = self.context['request'].user
-
-        if user.role.title == 'client':
-            validated_data['developer'] = None
-
-        developer = validated_data.get('developer')
-        if developer is not None:
-            role_title = getattr(developer.role, 'title', None)
-            if role_title != 'developer':
-                raise serializers.ValidationError(
-                    "Le développeur assigné doit avoir le rôle 'developer'."
-                )
-
+        # ['resolved', 'closed']
+        if 'status' in validated_data and validated_data['status'] in ['resolved'] and not instance.closed_at:
+            instance.closed_at = timezone.now()
+        elif instance.closed_at:
+            instance.closed_at = None
         return super().update(instance, validated_data)

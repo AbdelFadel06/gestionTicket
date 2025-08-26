@@ -17,18 +17,18 @@ class Ticket(models.Model):
         ('resolved', 'Résolu'),
         ('closed', 'Fermé'),
     ]
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=100, verbose_name="titre")
     description = models.TextField()
-    priority =  models.CharField(max_length=20,  choices=PRIORITY_CHOICES, default='basse')
-    status =  models.CharField(max_length=20 , choices=STATUS_CHOICES, default='new')
+    priority =  models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='basse', verbose_name="priorité")
+    status =  models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="statut")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     closed_at = models.DateTimeField(null=True, blank=True)
-    client = models.ForeignKey(
+    author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         null=True,
-        related_name='tickets_client'
+        related_name='tickets_author'
     )
     developer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -38,16 +38,8 @@ class Ticket(models.Model):
         related_name='tickets_dev'
     )
 
-
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
-
-    def save(self, *args, **kwargs):
-        if self.status == 'closed' and not self.closed_at:
-            self.closed_at = timezone.now()
-        elif self.status != 'closed' and self.closed_at:
-            self.closed_at = None
-        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['-created_at']

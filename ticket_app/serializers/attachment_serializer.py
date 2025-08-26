@@ -1,12 +1,11 @@
 from rest_framework import serializers
-from ..models.attachment import Attachment
-
+from ticket_app.models.attachment import Attachment
 
 class AttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attachment
         fields = '__all__'
-        read_only_fields = ['uploaded_at']
+        read_only_fields = ['uploaded_at', 'title', 'ticket', 'comment']
 
     def validate_file(self, value):
         if value.size > 10 * 1024 * 1024:  # 10MB max

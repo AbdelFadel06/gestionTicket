@@ -1,6 +1,2 @@
 from .attachment import AttachmentDetailView, AttachmentListCreateView
-from .comment import CommentDetailView, CommentListCreateView
-from .ticket import TicketDetailView, TicketListCreateView
-
-
-__all__ = ["AttachmentDetailView", "AttachmentListCreateView", "CommentDetailView", "CommentListCreateView", "TicketDetailView", "TicketListCreateView"]
+from .ticket import TicketViewSet, TicketMixinView, TicketRetrieveDestroyView, accepted, closed, setstatus, retrieveDestroyComment, CommentCreateView

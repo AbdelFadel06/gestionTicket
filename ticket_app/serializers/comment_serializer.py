@@ -1,32 +1,35 @@
 from rest_framework import serializers
-from ..models.comment import Comment
-from ..models.attachment import Attachment
-from ticket_app.serializers.attachment_serializer import AttachmentSerializer
+from ticket_app.models import Comment, Attachment
+from .attachment_serializer import AttachmentSerializer
+from .user_serializer import UserSerializer
+from django.core.validators import FileExtensionValidator
+from ticket_app.validators.file_validators import validate_file_size
 
-class CommentSerializer(serializers.ModelSerializer):
-    author_info = serializers.SerializerMethodField()
-    attachments = AttachmentSerializer(many=True, required=False)
-
+class CommentRetrieveSerializer(serializers.ModelSerializer):
+    # author = UserSerializer()
+    attachments = AttachmentSerializer(many=True)
     class Meta:
         model = Comment
-        fields = [
-            'id', 'content', 'created_at', 'ticket', 'author', 'author_info', 'attachments'
-        ]
-        read_only_fields = ['created_at', 'author', 'ticket']
+        fields = "__all__"
+        read_only_fields = 'created_at',
 
-    def get_author_info(self, obj):
-        return {
-            'id': obj.author.id,
-            'fullname': obj.author.fullname,
-            'role': obj.author.role.title if obj.author.role else None
-        }
+class CommentCreateSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(required=False, validators=[FileExtensionValidator(['png','jpg','jpeg']), validate_file_size])
+    attachment = AttachmentSerializer(read_only=True)
+    class Meta:
+        model = Comment
+        fields = 'content','ticket','file','attachment'
+        read_only_fields = 'created_at','ticket','author',
 
     def create(self, validated_data):
-        attachments_data = validated_data.pop('attachments', [])
-        validated_data['author'] = self.context['request'].user
-        comment = super().create(validated_data)
+        file_obj = None
+        if 'file' in validated_data:
+            file_obj = validated_data.pop('file')
 
-        for attachment_data in attachments_data:
-            Attachment.objects.create(comment=comment, **attachment_data)
+        obj = super().create(validated_data)
 
-        return comment
+        if file_obj is not None:
+            obj.attachments.create(file=file_obj, title=file_obj.name)
+
+        return obj
+
