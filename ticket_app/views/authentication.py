@@ -7,9 +7,10 @@ from rest_framework_simplejwt.authentication import JWTAuthentication, JWTTokenU
 from ticket_app.models import User
 from ticket_app.serializers.authentication import UserRegisterSerializer
 from ticket_app.serializers.user_serializer import UserSerializer
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, hashers
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 # Create your views here.
 
@@ -19,9 +20,17 @@ class CustomeTokenObtainPairView(TokenObtainPairView):
         password = request.data.get('password')
 
         if not username or not password:
-            return Response({"error": "Veuillez fournir un nom d'utilisateur et un mot de passe."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _("Veuillez fournir un nom d'utilisateur et un mot de passe.")}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not user.check_password(password):
+            return Response({"error": _("Identifiants invalides.")}, status=status.HTTP_401_UNAUTHORIZED)
 
-        user = authenticate(request, username=username, password=password)
+        # user = authenticate(request, username=username, password=password)
 
         if user is not None:
             serializer = self.get_serializer(data=request.data)
@@ -36,7 +45,7 @@ class CustomeTokenObtainPairView(TokenObtainPairView):
 
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         else:
-            return Response({"error": "Identifiants invalides."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": _("Identifiants invalides.")}, status=status.HTTP_401_UNAUTHORIZED)
 
 class UserRegister(generics.CreateAPIView):
     queryset = User.objects.all()
