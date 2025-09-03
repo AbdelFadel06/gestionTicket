@@ -51,6 +51,16 @@ class UserRegister(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegisterSerializer
 
+class DeveloperRegister(generics.GenericAPIView, mixins.CreateModelMixin):
+    queryset = User.objects.all()
+    serializer_class = UserRegisterSerializer
+
+    def post(self, request):
+        serializer = UserRegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(is_staff=True, is_developer=True)
+        return Response(serializer.data)
+
 @api_view(['POST'])
 def registration(request: Request):
     serializer = UserRegisterSerializer(data=request.data)

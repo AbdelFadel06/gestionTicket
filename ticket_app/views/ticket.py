@@ -1,12 +1,13 @@
 from rest_framework import viewsets, status, serializers, mixins
 from rest_framework.decorators import action, api_view, permission_classes
+from django.contrib.auth.decorators import permission_required, login_required
 from rest_framework.response import Response
 from ticket_app.models import Ticket, Comment
 from rest_framework import generics, permissions
 from django.db.models import Q
 from django.utils import timezone
 from ticket_app.serializers import CommentRetrieveSerializer, TicketCreateSerializer, TicketRetrieveSerializer, TicketStatusSerializer, CommentCreateSerializer
-from ticket_app.permisssions import IsAuthor, IsPermitted, AcceptPermission, ClosePermission, CommentPermission, IsRealDeveloper, RetrievePermission, IsCommentAuthor
+from ticket_app.permisssions import IsAuthor, IsAdmin, IsPermitted, HasNoDeveloper, IsDeveloper, IsRealDeveloper, IsCommentAuthor
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from django.utils.translation import gettext as _
@@ -24,23 +25,23 @@ class TicketViewSet(viewsets.ViewSet):
         elif self.action == 'retrieve':
             permission_classes = [permissions.IsAuthenticated, IsPermitted]
         elif self.action == 'accepted':
-            permission_classes = [permissions.IsAuthenticated, AcceptPermission]
+            permission_classes = [permissions.IsAuthenticated, (HasNoDeveloper & (IsAdmin | IsDeveloper)) | IsRealDeveloper]
         elif self.action == 'closed':
-            permission_classes = [permissions.IsAuthenticated, ClosePermission]
+            permission_classes = [permissions.IsAuthenticated, IsAdmin | IsAuthor | IsRealDeveloper]
         elif self.action == 'status':
-            permission_classes = [permissions.IsAuthenticated, IsRealDeveloper]
+            permission_classes = [permissions.IsAuthenticated, IsAdmin | IsRealDeveloper]
         elif self.action == 'comment':
-            permission_classes = [permissions.IsAuthenticated, CommentPermission]
+            permission_classes = [permissions.IsAuthenticated, IsAuthor | IsRealDeveloper]
         else:
             permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
-     
+
     def list(self, request):
         user = request.user
         if user.is_developer:
             data = self.queryset.filter(Q(developer=user) | Q(developer__isnull=True))
         elif not user.is_staff and not user.is_developer:
-            data = self.queryset.filter(user=user)
+            data = self.queryset.filter(author=user)
         else:
             data = self.queryset.all()
         serializer = TicketRetrieveSerializer(instance=data, many=True)
@@ -159,25 +160,20 @@ class TicketViewSet(viewsets.ViewSet):
         }, status=status.HTTP_200_OK)
 
     
-class TicketMixinView(
+class TicketListCreateView(
     generics.GenericAPIView,
     mixins.ListModelMixin, 
-    mixins.CreateModelMixin,):
+    mixins.CreateModelMixin):
     queryset = Ticket.objects.all()
     serializer_class = TicketRetrieveSerializer
 
     # authentication_classes = [authentication.SessionAuthentication, authentication.TokenAuthentication, jwt_authentication.JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated, IsPermitted]
-
-    # filter_backends = [DjangoFilterBackend]
-    # filter_backends = [filters.SearchFilter]
+    # permission_classes = [permissions.IsAuthenticated]
     
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title','author__username']
-
-    # filterset_fields = ['title']
-    # filter_backends = [filters.OrderingFilter]
-    # ordering = ['title']
+    filterset_fields = ['title']
+    ordering = ['title']
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -189,7 +185,7 @@ class TicketMixinView(
         if user.is_developer:
             data = self.queryset.filter(Q(developer=user) | Q(developer__isnull=True))
         elif not user.is_staff and not user.is_developer:
-            data = self.queryset.filter(user=user)
+            data = self.queryset.filter(author=user)
         else:
             data = self.queryset.all()
         return data
@@ -207,24 +203,11 @@ class TicketRetrieveDestroyView(generics.RetrieveDestroyAPIView):
     queryset = Ticket.objects.all()
     serializer_class = TicketRetrieveSerializer
 
-    # authentication_classes = [authentication.SessionAuthentication, authentication.TokenAuthentication, jwt_authentication.JWTAuthentication]
-    # permission_classes = [permissions.IsAuthenticated, IsPermitted]
-
     def get_permissions(self):
-        permission_classes = [permissions.IsAuthenticated, IsPermitted]
+        permission_classes = [permissions.IsAuthenticated, (IsAuthor | IsAdmin | (IsDeveloper & (HasNoDeveloper | IsRealDeveloper)))]
         if self.request.method == 'DELETE':
-            permission_classes = [permissions.IsAuthenticated, IsPermitted, IsAuthor]
+            permission_classes = [permissions.IsAuthenticated, IsAuthor]
         return [permission() for permission in permission_classes]
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_developer:
-            data = self.queryset.filter(Q(developer=user) | Q(developer__isnull=True))
-        elif not user.is_staff and not user.is_developer:
-            data = self.queryset.filter(user=user)
-        else:
-            data = self.queryset.all()
-        return data
     
     # def perform_destroy(self, instance):
     #     return super().perform_destroy(instance)
@@ -233,7 +216,7 @@ class CommentCreateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins
     queryset = Ticket.objects.all()
     serializer_class = TicketRetrieveSerializer
     # queryset = Ticket.objects.all()
-    permission_classes = [permissions.IsAuthenticated, CommentPermission]
+    permission_classes = [permissions.IsAuthenticated, IsAuthor | IsRealDeveloper]
 
     def get_queryset(self):
         return super().get_queryset()
@@ -253,6 +236,14 @@ class CommentCreateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins
         except Ticket.DoesNotExist as e:
             raise serializers.ValidationError(_(f"{e}"))
         
+        # Vérification manuelle de la permission sur l'objet
+        if not (IsRealDeveloper().has_object_permission(request, self, instance) or 
+                IsAuthor().has_object_permission(request, self, instance)):
+            return Response(
+                {"success": False, "detail": _('You do not have permission to perform this action.')},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         if request.method == 'POST':
             serializer = CommentCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -268,7 +259,7 @@ class CommentCreateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins
 
  
 @api_view(['PATCH'])
-@permission_classes([permissions.IsAuthenticated, AcceptPermission])
+@permission_classes([permissions.IsAuthenticated, (HasNoDeveloper & (IsAdmin | IsDeveloper)) | IsRealDeveloper])
 def accepted(request, pk=None):
     # return Response("Yooo")
     try:
@@ -291,7 +282,7 @@ def accepted(request, pk=None):
     }, status=status.HTTP_200_OK)
 
 @api_view(['PATCH'])
-@permission_classes([permissions.IsAuthenticated, ClosePermission])
+@permission_classes([permissions.IsAuthenticated, IsAdmin | IsAuthor | IsRealDeveloper])
 def closed(request, pk=None):
     try:
         instance = Ticket.objects.get(pk=pk)
@@ -308,7 +299,7 @@ def closed(request, pk=None):
     }, status=status.HTTP_200_OK)
 
 @api_view(['PATCH'])
-@permission_classes([permissions.IsAuthenticated, IsRealDeveloper])
+@permission_classes([permissions.IsAuthenticated, IsAdmin | IsRealDeveloper])
 def setstatus(request, pk=None):
     try:
         instance = Ticket.objects.get(pk=pk)

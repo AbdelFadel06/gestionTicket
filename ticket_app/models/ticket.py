@@ -43,3 +43,25 @@ class Ticket(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        # constraints = [
+        #     models.UniqueConstraint(fields=['fields_list'], name="unique_fields_list"),
+        #     models.CheckConstraint(check=models.Q(price__gt=0), name='prix_doit_etre_positif')
+        # ]
+        # constraints = [
+        #     # Cette contrainte garantit que le prix est toujours positif
+        #     models.CheckConstraint(
+        #         check=Q(prix__gt=0),
+        #         name='prix_positif'
+        #     )
+        # ]
+        # # Cette meta constraint garantit que la combinaison utilisateur/service est unique
+        # unique_together = ('utilisateur', 'service')
+        # constraints = [
+        #     models.UniqueConstraint(
+        #         fields=['utilisateur', 'service'], name="unique_person_group"
+        #     ),
+        #     models.UniqueConstraint(
+        #         fields=['utilisateur', 'service'], name="unique_person_group"
+        #     )
+        # ]
+
