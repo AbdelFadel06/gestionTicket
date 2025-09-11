@@ -7,27 +7,32 @@ import RegisterPage from './pages/RegisterPage'
 import Clients from './pages/Clients'
 import Tickets from './pages/Tickets'
 import Devs from './pages/Devs'
-
+import PrivateRoute from './routes/PrivateRoute'
+import PublicRoute from './routes/PublicRoute'
 
 function App() {
-    return (
-        <AuthProvider>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    {/* <Route path="/dashboard" element={<Layout />} /> */}
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Routes publiques (accessible seulement si pas connecté) */}
+          <Route element={<PublicRoute />}>
+            <Route path="/" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
 
-                    <Route path="/dashboard" element={<Layout />}>
-                        <Route index element={<Tickets />} />
-                        <Route path="clients" element={<Clients />} />
-                        <Route path="devs" element={<Devs />} />
-                    </Route>
-
-                </Routes>
-            </BrowserRouter>
-        </AuthProvider>
-    )
+          {/* Routes privées (protégées, accessibles uniquement si connecté) */}
+          <Route element={<PrivateRoute />}>
+            <Route path="/dashboard" element={<Layout />}>
+              <Route index element={<Tickets />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="devs" element={<Devs />} />
+            </Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  )
 }
 
 export default App

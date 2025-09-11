@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import login3 from '../assets/login3.jpg'
 import { AxiosError } from 'axios'
+import { useAuth } from '../context/AuthContext'
 
 const LoginPage = () => {
     const [username, setUsername] = useState<string>('')
     const [password, setPassword] = useState<string>('')
     const navigate = useNavigate()
+    const { setUser } = useAuth()
 
     const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -21,10 +23,12 @@ const LoginPage = () => {
             localStorage.setItem('access', res.data.access)
             localStorage.setItem('refresh', res.data.refresh)
 
-            const userRes = await axios.get('/api/auth/me/', {
+            const userRes = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
                 headers: { Authorization: `Bearer ${res.data.access}` },
             })
+
             localStorage.setItem('user', JSON.stringify(userRes.data))
+            setUser(userRes.data) // 🔑 mettre à jour le contexte
 
             navigate('/dashboard')
         } catch (error) {
