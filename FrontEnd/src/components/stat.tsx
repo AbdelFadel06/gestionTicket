@@ -1,12 +1,18 @@
+import React from 'react'
+
 interface StatProps {
   count: number | string
   label: string
+  colorBg?: string // couleur de fond optionnelle
+  colorText?: string // couleur du texte optionnelle
 }
 
-const Stat = ({ count, label }: StatProps) => {
+const Stat: React.FC<StatProps> = ({ count, label, colorBg = 'bg-muted/50', colorText = 'text-gray-800' }) => {
   return (
-    <div className="flex flex-col justify-center items-center h-full w-full">
-      <h1 className="text-[48px] font-bold text-gray-800">{count}</h1>
+    <div
+      className={`${colorBg} aspect-video rounded-xl flex flex-col justify-center items-center shadow p-4`}
+    >
+      <h1 className={`text-[48px] font-bold ${colorText}`}>{count}</h1>
       <p className="text-gray-600">{label}</p>
     </div>
   )

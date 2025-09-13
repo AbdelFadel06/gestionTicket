@@ -11,28 +11,30 @@ import PrivateRoute from './routes/PrivateRoute'
 import PublicRoute from './routes/PublicRoute'
 
 function App() {
-  return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Routes publiques (accessible seulement si pas connecté) */}
-          <Route element={<PublicRoute />}>
-            <Route path="/" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-          </Route>
+    return (
+        <AuthProvider>
+            <BrowserRouter>
+                <Routes>
+                    {/* Routes publiques (accessible seulement si pas connecté) */}
+                    <Route element={<PublicRoute />}>
+                        <Route path="/" element={<LoginPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
+                    </Route>
 
-          {/* Routes privées (protégées, accessibles uniquement si connecté) */}
-          <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<Layout />}>
-              <Route index element={<Tickets />} />
-              <Route path="clients" element={<Clients />} />
-              <Route path="devs" element={<Devs />} />
-            </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
-  )
+                    {/* Routes privées (protégées, accessibles uniquement si connecté) */}
+                    <Route element={<PrivateRoute />}>
+                        <Route path="/dashboard" element={<Layout />}>
+
+                            <Route path="tickets" element={<Tickets />} />
+                            <Route path="tickets/:filter" element={<Tickets />} />
+                            <Route path="clients" element={<Clients />} />
+                            <Route path="devs" element={<Devs />} />
+                        </Route>
+                    </Route>
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
+    )
 }
 
 export default App

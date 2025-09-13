@@ -2,23 +2,8 @@
 
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import {
-    BookOpen,
-    Bot,
-    Frame,
-    LifeBuoy,
-    Map,
-    PieChart,
-    Send,
-    Settings2,
-    SquareTerminal,
-} from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
-// import { NavMain } from '@/components/nav-main'
-// import { NavProjects } from '@/components/nav-projects'
-// import { NavSecondary } from '@/components/nav-secondary'
-
-import { NavUser } from '@/components/nav-user'
 import {
     Sidebar,
     SidebarContent,
@@ -29,131 +14,74 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-const data = {
-    user: {
-        name: 'shadcn',
-        email: 'm@example.com',
-        avatar: '/avatars/shadcn.jpg',
-    },
-    navMain: [
+// ✅ Config des menus par rôle
+const sidebarConfig = {
+    user: [
         {
-            title: 'Playground',
-            url: '#',
-            icon: SquareTerminal,
-            isActive: true,
-            items: [
-                {
-                    title: 'History',
-                    url: '#',
-                },
-                {
-                    title: 'Starred',
-                    url: '#',
-                },
-                {
-                    title: 'Settings',
-                    url: '#',
-                },
+            label: 'Tickets',
+            children: [
+                { label: 'Mes tickets', path: '/dashboard/tickets' },
+                { label: 'Créer un ticket', path: '/dashboard/tickets/new' },
+            ],
+        },
+    ],
+
+    developer: [
+        {
+            label: 'Tickets',
+            children: [
+                { label: 'Mes tickets', path: '/dashboard/tickets/assignes' },
+                { label: 'Tickets non assignés', path: '/dashboard/tickets/non-assignes' },
             ],
         },
         {
-            title: 'Models',
-            url: '#',
-            icon: Bot,
-            items: [
+            label: 'Utilisateurs',
+            children: [
                 {
-                    title: 'Genesis',
-                    url: '#',
-                },
-                {
-                    title: 'Explorer',
-                    url: '#',
-                },
-                {
-                    title: 'Quantum',
-                    url: '#',
-                },
-            ],
-        },
-        {
-            title: 'Documentation',
-            url: '#',
-            icon: BookOpen,
-            items: [
-                {
-                    title: 'Introduction',
-                    url: '#',
-                },
-                {
-                    title: 'Get Started',
-                    url: '#',
-                },
-                {
-                    title: 'Tutorials',
-                    url: '#',
-                },
-                {
-                    title: 'Changelog',
-                    url: '#',
-                },
-            ],
-        },
-        {
-            title: 'Settings',
-            url: '#',
-            icon: Settings2,
-            items: [
-                {
-                    title: 'General',
-                    url: '#',
-                },
-                {
-                    title: 'Team',
-                    url: '#',
-                },
-                {
-                    title: 'Billing',
-                    url: '#',
-                },
-                {
-                    title: 'Limits',
-                    url: '#',
+                    label: 'Clients',
+                    path: '/dashboard/clients', // liste → clic = tous les tickets du client
                 },
             ],
         },
     ],
-    navSecondary: [
+
+    admin: [
         {
-            title: 'Support',
-            url: '#',
-            icon: LifeBuoy,
+            label: 'Tickets',
+            children: [
+                { label: 'Tickets déjà assignés', path: '/dashboard/tickets/assignes' },
+                { label: 'Tickets non assignés', path: '/dashboard/tickets/non-assignes' },
+            ],
         },
         {
-            title: 'Feedback',
-            url: '#',
-            icon: Send,
-        },
-    ],
-    projects: [
-        {
-            name: 'Design Engineering',
-            url: '#',
-            icon: Frame,
-        },
-        {
-            name: 'Sales & Marketing',
-            url: '#',
-            icon: PieChart,
-        },
-        {
-            name: 'Travel',
-            url: '#',
-            icon: Map,
+            label: 'Utilisateurs',
+            children: [
+                {
+                    label: 'Clients',
+                    path: '/dashboard/clients', // liste → clic = tous les tickets du client
+                },
+                {
+                    label: 'Développeurs',
+                    path: '/dashboard/devs', // liste → clic = tickets d’un dev
+                },
+            ],
         },
     ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { user } = useAuth()
+
+    // Sélection des menus selon le rôle
+    let items: any[] = []
+    if (user?.role === 'Admin') {
+        items = sidebarConfig.admin
+    } else if (user?.role === 'Developer') {
+        items = sidebarConfig.developer
+    } else {
+        items = sidebarConfig.user
+    }
+
     return (
         <Sidebar variant="inset" {...props}>
             <SidebarHeader>
@@ -161,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <a href="#">
-                                <div className="flex aspect-square size-16   items-center justify-center rounded-lg">
+                                <div className="flex aspect-square size-16 items-center justify-center rounded-lg">
                                     <img
                                         src="/logo.png"
                                         alt="Help Desk Logo"
@@ -177,22 +105,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
+
             <SidebarContent>
-                {/* <NavMain items={data.navMain} /> */}
-                {/* <NavProjects projects={data.projects} /> */}
-                {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
-
                 <div className="text-sm mx-4 my-10 text-gray-700 space-y-3 flex flex-col">
-
-
-                    <Link className=" text-gray-700 hover:bg-black hover:text-white px-4 py-2 rounded" to="/dashboard">Mes tickets</Link>
-                    <Link className=" text-gray-700 hover:bg-black hover:text-white px-4 py-2 rounded" to="/dashboard/clients">Liste des Clients</Link>
-                    <Link className=" text-gray-700 hover:bg-black hover:text-white px-4 py-2 rounded" to="/dashboard/devs">Liste des développeurs</Link>
+                    {items.map((item, idx) =>
+                        item.children ? (
+                            <div key={idx} className="space-y-2">
+                                <p className="font-semibold text-gray-600">{item.label}</p>
+                                <div className="ml-3 flex flex-col space-y-2">
+                                    {item.children.map((sub, subIdx) => (
+                                        <Link
+                                            key={subIdx}
+                                            className="text-gray-700 hover:bg-black hover:text-white px-3 py-1 rounded"
+                                            to={sub.path}
+                                        >
+                                            {sub.label}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <Link
+                                key={idx}
+                                className="text-gray-700 hover:bg-black hover:text-white px-4 py-2 rounded"
+                                to={item.path}
+                            >
+                                {item.label}
+                            </Link>
+                        )
+                    )}
                 </div>
             </SidebarContent>
-            {/* <SidebarFooter>
-                <NavUser user={data.user} />
-            </SidebarFooter> */}
         </Sidebar>
     )
 }

@@ -11,35 +11,46 @@ const LoginPage = () => {
     const navigate = useNavigate()
     const { setUser } = useAuth()
 
-    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
+   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
 
-        try {
-            const res = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
-                username,
-                password,
-            })
+    try {
+        const res = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
+            username,
+            password,
+        })
 
-            localStorage.setItem('access', res.data.access)
-            localStorage.setItem('refresh', res.data.refresh)
+        localStorage.setItem('access', res.data.access)
+        localStorage.setItem('refresh', res.data.refresh)
 
-            const userRes = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
-                headers: { Authorization: `Bearer ${res.data.access}` },
-            })
+        const userRes = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
+            headers: { Authorization: `Bearer ${res.data.access}` },
+        })
 
-            localStorage.setItem('user', JSON.stringify(userRes.data))
-            setUser(userRes.data) // 🔑 mettre à jour le contexte
+        const userData = userRes.data
+        localStorage.setItem('user', JSON.stringify(userData))
+        setUser(userData) // met à jour le contexte
 
-            navigate('/dashboard')
-        } catch (error) {
-            if (error instanceof AxiosError) {
-                console.error(error.response?.data)
-            } else {
-                console.error(error)
-            }
-            alert('Login failed! Check your username and password.')
+        // 🔹 Redirection dynamique selon rôle
+        const role = userData.role?.toLowerCase()
+        if (role === 'user') {
+            navigate('/dashboard/tickets')
+        } else if (role === 'developer' || role === 'admin') {
+            navigate('/dashboard/tickets/assignes')
+        } else {
+            navigate('/dashboard') // fallback
         }
+
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error(error.response?.data)
+        } else {
+            console.error(error)
+        }
+        alert('Login failed! Check your username and password.')
     }
+}
+
 
     return (
         <div className="flex h-screen items-center bg-gray-50">

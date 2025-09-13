@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,TokenRefreshView
 from rest_framework.authtoken.views import obtain_auth_token
 from drf_spectacular.views import (SpectacularAPIView,SpectacularSwaggerView,SpectacularRedocView,)
 from ticket_app.views.authentication import MeView
-from .views.ticket import TicketStatsView, TicketChoicesView
+from .views.ticket import TicketStatsView, TicketChoicesView, users_and_developers,tickets_by_developer, tickets_by_user
 
 
 from ticket_app.personnal_auth.auth_views import login_view, refresh_view, protected_view, register_view, debug_check_user, debug_check_password
@@ -26,15 +26,6 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(), name="token_refresh"),
     path('auth/token/verify/', TokenVerifyView.as_view(), name="token_verify"),
     path("tickets/stats/", TicketStatsView.as_view(), name="ticket-stats"),
-
-
-    # path('api/login/', login_view, name='login'),
-    # path('api/register/', register_view, name='register'),
-    # path('api/refresh/', refresh_view, name='refresh'),
-    # path('api/protected/', protected_view, name='protected'),path('api/login/', login_view, name='login'),
-    # path('api/register/', register_view, name='register'),
-    # path('api/refresh/', refresh_view, name='refresh'),
-    # path('api/protected/', protected_view, name='protected'),
 
 
     path('api/debug/user/<str:email>/', debug_check_user, name='debug_user'),
@@ -66,6 +57,11 @@ ticket_urlpatterns = [
     path("ticket/choices/", TicketChoicesView.as_view(), name="ticket-choices"),
 
     path('comment/<int:pk>/', retrieveDestroyComment, name='retrieve_destroy_comment'),
+
+    path('users/', users_and_developers, name='users-and-developers'),
+    path('tickets/user/<int:user_id>/', tickets_by_user, name='tickets-by-user'),
+    path('tickets/developer/<int:developer_id>/', tickets_by_developer, name='tickets-by-developer'),
+
 ]
 urlpatterns.extend(ticket_urlpatterns)
 

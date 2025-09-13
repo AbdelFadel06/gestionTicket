@@ -7,8 +7,7 @@ import {
 } from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { useEffect, useState } from 'react'
-import { getCurrentUser, type User } from '../services/auth'
+
 import { Toaster, toast } from 'react-hot-toast'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Outlet, useNavigate } from 'react-router-dom'
@@ -24,22 +23,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export default function Layout() {
-  // const [user, setUser] = useState<User | null>(null)
 
   const { user, logOut } = useAuth()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const data = await getCurrentUser()
-        setUser(data)
-      } catch (err) {
-        console.error('Erreur récupération utilisateur :', err)
-      }
-    }
-    fetchUser()
-  }, [])
 
   const handleLogout = () => {
     logOut()

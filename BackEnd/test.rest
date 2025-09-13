@@ -20,8 +20,8 @@ POST http://127.0.0.1:8000/api/auth/login/
 Content-Type: application/json
 
 {
-    "username": "Dev",
-    "password": "developerMan0"
+    "username": "superuser",
+    "password": "superuser"
 }
 
 
@@ -58,12 +58,21 @@ Content-Type: application/json
 
 GET http://127.0.0.1:8000/api/auth/me/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3NTE5ODczLCJpYXQiOjE3NTc0MzM0NzMsImp0aSI6IjRmNWY1MDA3MjgxMjQzNDJhNWYxMmYwOWNkYzYwOWI5IiwidXNlcl9pZCI6IjE0In0.P39PKCO4bWw1U1IZVX4PsddrdYV8wtGGRCKWQKsORBE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3Nzk2OTcwLCJpYXQiOjE3NTc3MTA1NzAsImp0aSI6IjJlZDllNmNhMGIyMjQ0ZTM4MDQ4MTVjY2UxMzJmNWZlIiwidXNlcl9pZCI6IjE3In0.VluKq044EkS0IFsqR0Hl2cJGyV06u56vO6OZ5x3La6U
+
+
 ###
 
-GET http://127.0.0.1:8000/api/auth/me/
+GET http://127.0.0.1:8000/api/users/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3NDM0MDQwLCJpYXQiOjE3NTczNDc2NDAsImp0aSI6ImEwZGQyMmYzNzE4ZjQyN2JhMWJkOGY2NzczODkxZDhhIiwidXNlcl9pZCI6IjE0In0.ChKo8_U-4_g8j0JX3ZiXxhMhBvDyrSRueLmX4iJ9tO4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3Nzk2OTcwLCJpYXQiOjE3NTc3MTA1NzAsImp0aSI6IjJlZDllNmNhMGIyMjQ0ZTM4MDQ4MTVjY2UxMzJmNWZlIiwidXNlcl9pZCI6IjE3In0.VluKq044EkS0IFsqR0Hl2cJGyV06u56vO6OZ5x3La6U
+
+###
+
+GET http://127.0.0.1:8000/api/tickets/user/14/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3Nzk2OTcwLCJpYXQiOjE3NTc3MTA1NzAsImp0aSI6IjJlZDllNmNhMGIyMjQ0ZTM4MDQ4MTVjY2UxMzJmNWZlIiwidXNlcl9pZCI6IjE3In0.VluKq044EkS0IFsqR0Hl2cJGyV06u56vO6OZ5x3La6U
+
 ###
 
 PATCH   http://127.0.0.1:8000/api/ticket/20/accepted/

@@ -1,11 +1,11 @@
 from rest_framework import viewsets, status, serializers, mixins
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from ticket_app.models import Ticket, Comment
+from ticket_app.models import Ticket, Comment, User
 from rest_framework import generics, permissions
 from django.db.models import Q
 from django.utils import timezone
-from ticket_app.serializers import CommentRetrieveSerializer, TicketCreateSerializer, TicketRetrieveSerializer, TicketStatusSerializer, CommentCreateSerializer
+from ticket_app.serializers import CommentRetrieveSerializer, TicketCreateSerializer, TicketRetrieveSerializer, TicketStatusSerializer, CommentCreateSerializer, UserMeSerializer
 from ticket_app.permisssions import IsAuthor, IsPermitted, AcceptPermission, ClosePermission, CommentPermission, IsRealDeveloper, RetrievePermission, IsCommentAuthor
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
@@ -382,3 +382,45 @@ class TicketChoicesView(APIView):
             "priority": Ticket._meta.get_field("priority").choices,
             "status": Ticket._meta.get_field("status").choices,
         })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Récupérer tous les utilisateurs ou seulement les développeurs
+@api_view(['GET'])
+def users_and_developers(request):
+    users = User.objects.filter(
+        is_staff=False,
+        is_superuser=False,
+        is_developer=False
+    )
+    developers = User.objects.filter(is_developer=True)
+
+    return Response({
+        "users": UserMeSerializer(users, many=True).data,
+        "developers": UserMeSerializer(developers, many=True).data,
+    })
+
+# Tickets créés par un user spécifique
+@api_view(['GET'])
+def tickets_by_user(request, user_id):
+    tickets = Ticket.objects.filter(author_id=user_id)
+    serializer = TicketRetrieveSerializer(tickets, many=True)
+    return Response(serializer.data)
+
+# Tickets assignés à un développeur spécifique
+@api_view(['GET'])
+def tickets_by_developer(request, developer_id):
+    tickets = Ticket.objects.filter(developer_id=developer_id)
+    serializer = TicketRetrieveSerializer(tickets, many=True)
+    return Response(serializer.data)
