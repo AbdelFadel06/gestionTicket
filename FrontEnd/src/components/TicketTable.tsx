@@ -34,7 +34,7 @@ interface Props {
 
 const TicketTable: React.FC<Props> = ({
   tickets,
-  currentUser,
+  // currentUser,
   showAssignButton = false,
   showDeleteButtonForUserId,
   onAssign,

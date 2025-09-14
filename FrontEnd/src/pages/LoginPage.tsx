@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import login3 from '../assets/login3.jpg'
-import { AxiosError } from 'axios'
+// import { AxiosError } from 'axios'
 import { useAuth } from '../context/AuthContext'
 
 const LoginPage = () => {

@@ -234,7 +234,8 @@ export default function Tickets() {
                             <TableCell>{i + 1}</TableCell>
                             <TableCell>{ticket.title}</TableCell>
                             <TableCell>
-                                {priorityLabels[ticket.priority] ?? ticket.priority}
+                                {ticket.priority ? priorityLabels[ticket.priority] ?? ticket.priority : "N/A"}
+
                             </TableCell>
                             {/* status → modifiable si dev */}
                             <TableCell>

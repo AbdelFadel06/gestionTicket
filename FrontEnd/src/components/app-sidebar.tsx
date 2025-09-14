@@ -4,10 +4,18 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 
+
+
+type MenuItem = {
+  label: string
+  path?: string
+  children?: MenuItem[]
+}
+
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
+    // SidebarFooter,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -113,11 +121,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             <div key={idx} className="space-y-2">
                                 <p className="font-semibold text-gray-600">{item.label}</p>
                                 <div className="ml-3 flex flex-col space-y-2">
-                                    {item.children.map((sub, subIdx) => (
+                                    {item.children.map((sub: MenuItem, subIdx: number) => (
                                         <Link
                                             key={subIdx}
                                             className="text-gray-700 hover:bg-black hover:text-white px-3 py-1 rounded"
-                                            to={sub.path}
+                                            to={sub.path ?? "#"}
                                         >
                                             {sub.label}
                                         </Link>
