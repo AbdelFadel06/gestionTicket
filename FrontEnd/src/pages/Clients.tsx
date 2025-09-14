@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import api from '../services/api'
 import {
     Table,
@@ -27,20 +27,57 @@ const Clients = () => {
     const [clients, setClients] = useState<User[]>([])
     const [selectedClient, setSelectedClient] = useState<User | null>(null)
     const [tickets, setTickets] = useState<Ticket[]>([])
+    const [totalTickets, setTotalTickets] = useState<number>(0) // ✅ total global
+    const ticketsRef = useRef<HTMLDivElement | null>(null)
 
-    // Charger les clients
+    // dictionnaire des labels
+    const [statusLabels, setStatusLabels] = useState<Record<string, string>>({})
+    const [priorityLabels, setPriorityLabels] = useState<Record<string, string>>({})
+
+    const getChoices = async () => {
+        try {
+            const res = await api.get('/api/ticket/choices/')
+            const { status, priority } = res.data
+
+            setStatusLabels(
+                Object.fromEntries(status.map(([value, label]: [string, string]) => [value, label]))
+            )
+            setPriorityLabels(
+                Object.fromEntries(priority.map(([value, label]: [string, string]) => [value, label]))
+            )
+        } catch (err) {
+            console.error('Erreur récupération choices', err)
+        }
+    }
+
+    // Charger les clients + tickets totaux
     useEffect(() => {
         const fetchClients = async () => {
             try {
                 const res = await api.get('api/users/')
-                console.log('Données reçues :', res.data) // ⚡ debug
-                setClients(res.data.users || []) // sécuriser
+                setClients(res.data.users || [])
             } catch (error) {
                 console.error('Erreur récupération clients :', error)
             }
         }
 
+        const fetchTotalTickets = async () => {
+            try {
+                const res = await api.get('api/ticket/') // ⚡ endpoint qui retourne tous les tickets
+                if (res.data && Array.isArray(res.data.results)) {
+                    setTotalTickets(res.data.results.length)
+                } else {
+                    setTotalTickets(0)
+                }
+            } catch (error) {
+                console.error('Erreur récupération total tickets :', error)
+                setTotalTickets(0)
+            }
+        }
+
         fetchClients()
+        fetchTotalTickets()
+        getChoices()
     }, [])
 
     // Charger les tickets d’un client
@@ -49,20 +86,33 @@ const Clients = () => {
         setTickets(res.data)
     }
 
+    const handleViewTickets = (client: User) => {
+        setSelectedClient(client)
+        fetchTicketsByClient(client.id)
+        setTimeout(() => {
+            ticketsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 300)
+    }
+
     return (
         <>
-            {/* Stats fictives pour l’instant */}
+            {/* Stats */}
             <div className="grid auto-rows-min gap-4 md:grid-cols-3 mb-4">
                 <div className="bg-muted/50 aspect-video rounded-xl flex items-center justify-center">
                     <span>Total Clients : {clients.length}</span>
                 </div>
-                <div className="bg-muted/50 aspect-video rounded-xl flex items-center justify-center">
-                    <span>Tickets totaux : {tickets.length}</span>
+                <div className="bg-red-400/50 aspect-video rounded-xl flex items-center justify-center">
+                    <span>Tickets totaux : {totalTickets}</span>
                 </div>
-                <div className="bg-muted/50 aspect-video rounded-xl flex items-center justify-center">
+                <div className="bg-muted/50 aspect-video rounded-xl flex flex-col items-center justify-center">
                     <span>
                         Client sélectionné : {selectedClient ? selectedClient.username : 'Aucun'}
                     </span>
+                    {selectedClient && (
+                        <span className="text-sm text-gray-600">
+                            Tickets : {tickets.length}
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -72,7 +122,7 @@ const Clients = () => {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>ID</TableHead>
+                            <TableHead>#</TableHead>
                             <TableHead>Nom</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Action</TableHead>
@@ -80,18 +130,13 @@ const Clients = () => {
                     </TableHeader>
                     <TableBody>
                         {clients.length > 0 ? (
-                            clients.map(client => (
+                            clients.map((client, item) => (
                                 <TableRow key={client.id}>
-                                    <TableCell>{client.id}</TableCell>
+                                    <TableCell>{item + 1}</TableCell>
                                     <TableCell>{client.username}</TableCell>
                                     <TableCell>{client.email}</TableCell>
                                     <TableCell>
-                                        <Button
-                                            onClick={() => {
-                                                setSelectedClient(client)
-                                                fetchTicketsByClient(client.id)
-                                            }}
-                                        >
+                                        <Button onClick={() => handleViewTickets(client)}>
                                             Voir Tickets
                                         </Button>
                                     </TableCell>
@@ -110,25 +155,25 @@ const Clients = () => {
 
             {/* Liste des tickets du client sélectionné */}
             {selectedClient && (
-                <div className="bg-muted/50 p-4 mt-4 rounded-xl">
+                <div ref={ticketsRef} className="bg-muted/50 p-4 mt-4 rounded-xl">
                     <h2 className="text-lg font-bold mb-2">Tickets de {selectedClient.username}</h2>
                     {tickets.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID</TableHead>
+                                    <TableHead>#</TableHead>
                                     <TableHead>Titre</TableHead>
                                     <TableHead>Statut</TableHead>
                                     <TableHead>Priorité</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {tickets.map(ticket => (
+                                {tickets.map((ticket, item) => (
                                     <TableRow key={ticket.id}>
-                                        <TableCell>{ticket.id}</TableCell>
+                                        <TableCell>{item + 1}</TableCell>
                                         <TableCell>{ticket.title}</TableCell>
-                                        <TableCell>{ticket.status}</TableCell>
-                                        <TableCell>{ticket.priority}</TableCell>
+                                        <TableCell>{statusLabels[ticket.status] ?? ticket.status}</TableCell>
+                                        <TableCell>{priorityLabels[ticket.priority] ?? ticket.priority}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

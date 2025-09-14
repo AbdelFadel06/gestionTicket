@@ -74,7 +74,7 @@ export default function Layout() {
               <DropdownMenuContent className="w-48" align="end">
                 <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
                   Profil
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
