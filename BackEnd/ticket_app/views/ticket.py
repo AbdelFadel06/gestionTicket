@@ -88,27 +88,39 @@ class TicketViewSet(viewsets.ViewSet):
             "success": True
         }, status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, url_path='accepted', url_name='accepted-ticket', methods=['patch', 'get'], name="Traiter le ticket", description="accepté/prendre un ticket")
+    @action(detail=True, url_path='accepted', methods=['patch'], name="Traiter le ticket")
     def accepted(self, request, pk=None):
         try:
             instance = self.queryset.get(pk=pk)
-        except Ticket.DoesNotExist as e:
-            # CORRECTION: message d'erreur plus générique
+        except Ticket.DoesNotExist:
             raise serializers.ValidationError(_("Ticket non trouvé"))
-        if request.method == 'PATCH':
-            user = request.user
-            if instance.developer is not None and user.id != instance.developer.id:
-                raise serializers.ValidationError(detail=_("Ticket déjà attribué."), code=status.HTTP_401_UNAUTHORIZED)
+
+        user = request.user
+        dev_id = request.data.get("developer")
+
+        # Cas 1 : admin assigne un dev
+        if dev_id and user.is_staff:
+            try:
+                developer = User.objects.get(pk=dev_id, is_developer=True)
+            except User.DoesNotExist:
+                raise serializers.ValidationError(_("Développeur introuvable"))
+            instance.developer = developer
+            instance.save(update_fields=['developer'])
+
+        # Cas 2 : un dev prend le ticket
+        else:
+            if instance.developer and user.id != instance.developer.id:
+                raise serializers.ValidationError(_("Ticket déjà attribué."))
             if not instance.developer:
                 instance.developer = user
                 instance.save(update_fields=['developer'])
 
         serializer = TicketRetrieveSerializer(instance)
-
-        return Response(data={
+        return Response({
             "success": True,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+
 
     @action(detail=True, url_path='closed', url_name='closed-ticket', methods=['get','patch'], name="Fermer le ticket", description="fermé un ticket")
     def closed(self, request, pk=None):
@@ -270,29 +282,41 @@ class CommentCreateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins
             "data": serializer.data,
         }, status=status.HTTP_200_OK)
 
-
 @api_view(['PATCH'])
 @permission_classes([permissions.IsAuthenticated, AcceptPermission])
 def accepted(request, pk=None):
     try:
         instance = Ticket.objects.get(pk=pk)
-    except Ticket.DoesNotExist as e:
-        # CORRECTION: message d'erreur plus générique
+    except Ticket.DoesNotExist:
         raise serializers.ValidationError(_("Ticket non trouvé"))
-    if request.method == 'PATCH':
-        user = request.user
+
+    user = request.user
+    dev_id = request.data.get("developer")  # 👈 récupère l’ID si envoyé
+
+    # Cas 1 : un admin assigne un développeur
+    if dev_id and user.is_staff:
+        try:
+            developer = User.objects.get(pk=dev_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(_("Développeur introuvable"))
+        instance.developer = developer
+        instance.save(update_fields=['developer'])
+
+    # Cas 2 : un développeur s’assigne lui-même (si libre)
+    elif not dev_id:
         if instance.developer is not None and user.id != instance.developer.id:
-            raise serializers.ValidationError(detail=_("Ticket déjà attribué."), code=status.HTTP_401_UNAUTHORIZED)
+            raise serializers.ValidationError(_("Ticket déjà attribué."))
         if not instance.developer:
             instance.developer = user
             instance.save(update_fields=['developer'])
 
     serializer = TicketRetrieveSerializer(instance)
-
-    return Response(data={
+    return Response({
         "success": True,
         "data": serializer.data
     }, status=status.HTTP_200_OK)
+
+
 
 @api_view(['PATCH'])
 @permission_classes([permissions.IsAuthenticated, ClosePermission])
@@ -424,3 +448,24 @@ def tickets_by_developer(request, developer_id):
     tickets = Ticket.objects.filter(developer_id=developer_id)
     serializer = TicketRetrieveSerializer(tickets, many=True)
     return Response(serializer.data)
+
+
+
+
+
+class TicketStatusUpdateView(generics.UpdateAPIView):
+    queryset = Ticket.objects.all()
+    serializer_class = TicketStatusSerializer
+    permission_classes = [permissions.IsAuthenticated, IsRealDeveloper]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            "success": True,
+            "data": TicketRetrieveSerializer(instance).data
+        }, status=status.HTTP_200_OK)
+
+

@@ -6,10 +6,10 @@ from django.core.exceptions import ValidationError
 
 class Ticket(models.Model):
     PRIORITY_CHOICES = [
-        ('basse', 'basse'),
-        ('moyenne',  'moyenne'),
-        ('haute', 'haute'),
-        ('critique', 'critique')
+        ('basse', 'Basse'),
+        ('moyenne',  'Moyenne'),
+        ('haute', 'Haute'),
+        ('critique', 'Critique')
     ]
     STATUS_CHOICES = [
         ('new', 'Nouveau'),
