@@ -1,17 +1,17 @@
 import { useAuth } from "@/context/AuthContext"
 import ProfileCard from "@/components/ProfileCard"
+import { Navigate } from "react-router-dom"
 
 export default function ProfilePage() {
-  const { user } = useAuth() // récupère l'utilisateur connecté
+  const { user } = useAuth()
 
   if (!user) {
-    return <p className="text-center mt-10">Veuillez vous connecter pour voir votre profil.</p>
+    return <Navigate to="/login" />
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-center">Mon Profil</h1>
-      <ProfileCard profile={user} />
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <ProfileCard user={user} />
     </div>
   )
 }
