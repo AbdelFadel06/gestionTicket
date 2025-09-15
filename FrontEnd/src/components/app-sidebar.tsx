@@ -1,21 +1,19 @@
 'use client'
 
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-
-
+import { useLocation, useNavigate } from 'react-router-dom'
 
 type MenuItem = {
-  label: string
-  path?: string
-  children?: MenuItem[]
+    label: string
+    path?: string
+    children?: MenuItem[]
 }
 
 import {
     Sidebar,
     SidebarContent,
-    // SidebarFooter,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -44,12 +42,7 @@ const sidebarConfig = {
         },
         {
             label: 'Utilisateurs',
-            children: [
-                {
-                    label: 'Clients',
-                    path: '/dashboard/clients', // liste → clic = tous les tickets du client
-                },
-            ],
+            children: [{ label: 'Clients', path: '/dashboard/clients' }],
         },
     ],
 
@@ -64,14 +57,8 @@ const sidebarConfig = {
         {
             label: 'Utilisateurs',
             children: [
-                {
-                    label: 'Clients',
-                    path: '/dashboard/clients', // liste → clic = tous les tickets du client
-                },
-                {
-                    label: 'Développeurs',
-                    path: '/dashboard/devs', // liste → clic = tickets d’un dev
-                },
+                { label: 'Clients', path: '/dashboard/clients' },
+                { label: 'Développeurs', path: '/dashboard/devs' },
             ],
         },
     ],
@@ -79,6 +66,8 @@ const sidebarConfig = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { user } = useAuth()
+    const location = useLocation()
+    const navigate = useNavigate()
 
     // Sélection des menus selon le rôle
     let items: any[] = []
@@ -90,13 +79,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         items = sidebarConfig.user
     }
 
+    // ✅ Définir le premier lien par défaut après connexion
+    React.useEffect(() => {
+        // Si on est exactement sur /dashboard, on redirige vers le 1er lien du rôle
+        if (location.pathname === '/dashboard') {
+            const firstItem = items[0]?.children?.[0] || items[0]
+            if (firstItem?.path) {
+                navigate(firstItem.path, { replace: true })
+            }
+        }
+    }, [items, location.pathname, navigate])
+
     return (
         <Sidebar variant="inset" {...props}>
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <a href="#">
+                            <Link to="/dashboard/tickets/assignes">
                                 <div className="flex aspect-square size-16 items-center justify-center rounded-lg">
                                     <img
                                         src="/logo.png"
@@ -108,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     <span className="truncate font-medium">Help Desk</span>
                                     <span className="truncate text-xs">Company</span>
                                 </div>
-                            </a>
+                            </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
@@ -122,24 +122,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 <p className="font-semibold text-gray-600">{item.label}</p>
                                 <div className="ml-3 flex flex-col space-y-2">
                                     {item.children.map((sub: MenuItem, subIdx: number) => (
-                                        <Link
+                                        <NavLink
                                             key={subIdx}
-                                            className="text-gray-700 hover:bg-black hover:text-white px-3 py-1 rounded"
-                                            to={sub.path ?? "#"}
+                                            to={sub.path ?? '#'}
+                                            end
+                                            className={({ isActive }) =>
+                                                `px-3 py-1 rounded ${
+                                                    isActive
+                                                        ? 'bg-black text-white'
+                                                        : 'text-gray-700 hover:bg-gray-200 hover:text-gray-800'
+                                                }`
+                                            }
                                         >
                                             {sub.label}
-                                        </Link>
+                                        </NavLink>
                                     ))}
                                 </div>
                             </div>
                         ) : (
-                            <Link
+                            <NavLink
                                 key={idx}
-                                className="text-gray-700 hover:bg-black hover:text-white px-4 py-2 rounded"
-                                to={item.path}
+                                to={item.path ?? '#'}
+                                end
+                                className={({ isActive }) =>
+                                    `px-4 py-2 rounded ${
+                                        isActive
+                                            ? 'bg-black text-white'
+                                            : 'text-gray-700 hover:bg-gray-200 hover:text-gray-800'
+                                    }`
+                                }
                             >
                                 {item.label}
-                            </Link>
+                            </NavLink>
                         )
                     )}
                 </div>

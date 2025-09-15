@@ -363,7 +363,6 @@ def retrieveDestroyComment(request, pk=None):
     try:
         instance = Comment.objects.prefetch_related('attachments').get(pk=pk)
     except Comment.DoesNotExist as e:
-        # CORRECTION: message d'erreur plus générique
         raise serializers.ValidationError(_("Commentaire non trouvé"), code=status.HTTP_404_NOT_FOUND)
     if request.method == 'DELETE':
         instance.delete()

@@ -98,10 +98,10 @@ const Clients = () => {
         <>
             {/* Stats */}
             <div className="grid auto-rows-min gap-4 md:grid-cols-3 mb-4">
-                <div className="bg-muted/50 aspect-video rounded-xl flex items-center justify-center">
+                <div className=" aspect-video rounded-xl flex items-center justify-center bg-yellow-100">
                     <span>Total Clients : {clients.length}</span>
                 </div>
-                <div className="bg-red-400/50 aspect-video rounded-xl flex items-center justify-center">
+                <div className="bg-green-100 aspect-video rounded-xl flex items-center justify-center">
                     <span>Tickets totaux : {totalTickets}</span>
                 </div>
                 <div className="bg-muted/50 aspect-video rounded-xl flex flex-col items-center justify-center">
@@ -172,8 +172,35 @@ const Clients = () => {
                                     <TableRow key={ticket.id}>
                                         <TableCell>{item + 1}</TableCell>
                                         <TableCell>{ticket.title}</TableCell>
-                                        <TableCell>{statusLabels[ticket.status] ?? ticket.status}</TableCell>
-                                        <TableCell>{priorityLabels[ticket.priority] ?? ticket.priority}</TableCell>
+                                        <TableCell><span
+                                                className={
+                                                    ticket.status === 'new'
+                                                        ? 'text-blue-400'
+                                                        : ticket.status === ' in_progress'
+                                                        ? 'text-gray-700'
+                                                        : ticket.status === 'resolved'
+                                                        ? ' text-green-600'
+                                                        : 'text-yellow-500'
+                                                }
+                                            >
+                                                {statusLabels[ticket.status] ?? ticket.status}
+                                            </span></TableCell>
+                                        <TableCell><span
+                                                className={` inline-flex items-center justify-center h-8 w-24 rounded text-sm font-medium ${
+                                                    ticket.priority === 'critique'
+                                                        ? 'text-red-600 bg-red-100 px-3 py-2 rounded '
+                                                        : ticket.priority === 'haute'
+                                                        ? 'text-orange-500  bg-orange-100 px-3 py-2 rounded'
+                                                        : ticket.priority === 'moyenne'
+                                                        ? 'text-yellow-400  bg-yellow-100 px-3 py-2 rounded'
+                                                        : 'text-green-500  bg-green-100 px-3 py-2 rounded'
+                                                }`}
+                                            >
+                                                {ticket.priority
+                                                    ? priorityLabels[ticket.priority] ??
+                                                      ticket.priority
+                                                    : 'N/A'}
+                                            </span></TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

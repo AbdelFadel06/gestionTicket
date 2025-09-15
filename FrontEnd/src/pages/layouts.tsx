@@ -62,8 +62,8 @@ export default function Layout() {
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center space-x-3 cursor-pointer">
                   <Avatar className="size-10">
-                    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                    <AvatarFallback>CN</AvatarFallback>
+                    <AvatarImage src={user?.profile_picture ? user.profile_picture : "https://github.com/shadcn.png"} alt="@shadcn" />
+                    <AvatarFallback> {user?.first_name.charAt(0) }{user?.last_name.charAt(0) }</AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:block text-left">
                     <h3 className="text-blue-950">{user?.username}</h3>

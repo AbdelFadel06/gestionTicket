@@ -7,6 +7,8 @@ import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { toast, Toaster } from 'react-hot-toast'
 
+import { PieChart, Pie, Cell, Tooltip as ReTooltip, Legend, ResponsiveContainer } from 'recharts'
+
 import {
     Table,
     TableBody,
@@ -24,6 +26,7 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 interface User {
     id: number
@@ -61,6 +64,7 @@ export default function Tickets() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [newComment, setNewComment] = useState('')
     const [loadingComment, setLoadingComment] = useState(false)
+
 
     // dictionnaire des labels
     const [statusLabels, setStatusLabels] = useState<Record<string, string>>({})
@@ -181,11 +185,52 @@ export default function Tickets() {
         }
     }
 
+    const [filterStatus, setFilterStatus] = useState<string>('') // '' = tous
+    const [filterPriority, setFilterPriority] = useState<string>('') // '' = toutes
+    const [searchTitle, setSearchTitle] = useState<string>('') // recherche par titre
+
     const totalTickets = tickets.length
     const unassignedTickets = tickets.filter(t => !t.developer).length
     const resolvedTickets = tickets.filter(t => t.status === 'resolved').length
 
     const [devs, setDevs] = useState<User[]>([]) // liste des devs pour admin
+
+    const filteredTickets = tickets.filter(ticket => {
+        const matchesStatus = filterStatus ? ticket.status === filterStatus : true
+        const matchesPriority = filterPriority ? ticket.priority === filterPriority : true
+        const matchesTitle = searchTitle
+            ? ticket.title.toLowerCase().includes(searchTitle.toLowerCase())
+            : true
+
+        return matchesStatus && matchesPriority && matchesTitle
+    })
+
+
+
+    const statusData = Object.entries(
+        tickets.reduce((acc: Record<string, number>, t) => {
+            acc[t.status] = (acc[t.status] || 0) + 1
+            return acc
+        }, {})
+    ).map(([status, count]) => ({
+        name: statusLabels[status] ?? status,
+        value: count,
+    }))
+
+    const priorityData = Object.entries(
+        tickets.reduce((acc: Record<string, number>, t) => {
+            if (t.priority) {
+                acc[t.priority] = (acc[t.priority] || 0) + 1
+            }
+            return acc
+        }, {})
+    ).map(([priority, count]) => ({
+        name: priorityLabels[priority] ?? priority,
+        value: count,
+    }))
+
+    // Couleurs (tu peux adapter)
+    const COLORS = ['#2563eb', '#f59e0b', '#22c55e', '#ef4444', '#9333ea']
 
     return (
         <div className="p-4 space-y-6">
@@ -207,6 +252,67 @@ export default function Tickets() {
                 </div>
             </div>
 
+            {/* Stats + Donuts (admin only) */}
+            {user?.role?.toLowerCase() === 'admin' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Donut par statut */}
+                    <div className="bg-white shadow rounded-xl p-4 flex flex-col items-center">
+                        <h2 className="text-sm font-medium mb-2">Tickets par statut</h2>
+                        <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                                <Pie
+                                    data={statusData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={50}
+                                    outerRadius={80}
+                                    label
+                                >
+                                    {statusData.map((_, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={COLORS[index % COLORS.length]}
+                                        />
+                                    ))}
+                                </Pie>
+                                <ReTooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Donut par priorité */}
+                    <div className="bg-white shadow rounded-xl p-4 flex flex-col items-center">
+                        <h2 className="text-sm font-medium mb-2">Tickets par priorité</h2>
+                        <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                                <Pie
+                                    data={priorityData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={50}
+                                    outerRadius={80}
+                                    label
+                                >
+                                    {priorityData.map((_, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={COLORS[index % COLORS.length]}
+                                        />
+                                    ))}
+                                </Pie>
+                                <ReTooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            )}
+
             {/* Titre */}
             <h1 className="text-xl font-bold">
                 {filter === 'assignes' && 'Tickets assignés'}
@@ -214,6 +320,45 @@ export default function Tickets() {
                 {filter === 'resolus' && 'Tickets résolus'}
                 {!filter && 'Tous les tickets'}
             </h1>
+
+            <div className="flex flex-wrap gap-4 mb-4">
+                {/* Filtrer par statut */}
+                <select
+                    value={filterStatus}
+                    onChange={e => setFilterStatus(e.target.value)}
+                    className="border rounded px-2 py-1"
+                >
+                    <option value="">Tous les statuts</option>
+                    {Object.entries(statusLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                            {label}
+                        </option>
+                    ))}
+                </select>
+
+                {/* Filtrer par priorité */}
+                <select
+                    value={filterPriority}
+                    onChange={e => setFilterPriority(e.target.value)}
+                    className="border rounded px-2 py-1"
+                >
+                    <option value="">Toutes les priorités</option>
+                    {Object.entries(priorityLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                            {label}
+                        </option>
+                    ))}
+                </select>
+
+                {/* Recherche par titre */}
+                <input
+                    type="text"
+                    placeholder="Rechercher par titre..."
+                    value={searchTitle}
+                    onChange={e => setSearchTitle(e.target.value)}
+                    className="border rounded px-2 py-1 ml-auto w-64 "
+                />
+            </div>
 
             {/* Tableau */}
 
@@ -229,38 +374,79 @@ export default function Tickets() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {tickets.map((ticket, i) => (
+                    {filteredTickets.map((ticket, i) => (
                         <TableRow key={ticket.id}>
                             <TableCell>{i + 1}</TableCell>
                             <TableCell>{ticket.title}</TableCell>
                             <TableCell>
-                                {ticket.priority ? priorityLabels[ticket.priority] ?? ticket.priority : "N/A"}
-
+                                <span
+                                    className={` inline-flex items-center justify-center h-8 w-24 rounded text-sm font-medium ${
+                                        ticket.priority === 'critique'
+                                            ? 'text-red-600 bg-red-100 px-3 py-2 rounded '
+                                            : ticket.priority === 'haute'
+                                            ? 'text-orange-500  bg-orange-100 px-3 py-2 rounded'
+                                            : ticket.priority === 'moyenne'
+                                            ? 'text-yellow-400  bg-yellow-100 px-3 py-2 rounded'
+                                            : 'text-green-500  bg-green-100 px-3 py-2 rounded'
+                                    }`}
+                                >
+                                    {ticket.priority
+                                        ? priorityLabels[ticket.priority] ?? ticket.priority
+                                        : 'N/A'}
+                                </span>
                             </TableCell>
                             {/* status → modifiable si dev */}
                             <TableCell>
-                                {user?.role?.toLowerCase() === 'developer' &&
-                                ticket.developer?.id === user.id ? (
-                                    <select
-                                        value={ticket.status}
-                                        onChange={e =>
-                                            handleChangeStatus(ticket.id, e.target.value)
-                                        }
-                                        className="border rounded px-2 py-1"
-                                    >
-                                        {Object.entries(statusLabels).map(([value, label]) => (
-                                            <option key={value} value={value}>
-                                                {label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    statusLabels[ticket.status] ?? ticket.status
-                                )}
+                                <span
+                                    className={
+                                        ticket.status === 'new'
+                                            ? 'text-blue-400'
+                                            : ticket.status === ' in_progress'
+                                            ? 'text-gray-700'
+                                            : ticket.status === 'resolved'
+                                            ? ' text-green-600'
+                                            : 'text-yellow-500'
+                                    }
+                                >
+                                    {user?.role?.toLowerCase() === 'developer' &&
+                                    ticket.developer?.id === user.id ? (
+                                        <select
+                                            value={ticket.status}
+                                            onChange={e =>
+                                                handleChangeStatus(ticket.id, e.target.value)
+                                            }
+                                            className="border rounded px-2 py-1"
+                                        >
+                                            {Object.entries(statusLabels).map(([value, label]) => (
+                                                <option key={value} value={value}>
+                                                    {label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        statusLabels[ticket.status] ?? ticket.status
+                                    )}
+                                </span>
                             </TableCell>
-                            <TableCell className="font-bold">
+                            <TableCell className="font-medium">
                                 {ticket.developer ? (
-                                    ticket.developer.username
+                                    <div className="flex items-center space-x-4">
+                                        <Avatar>
+                                            <AvatarImage
+                                                src={
+                                                    ticket.developer.profile_picture
+                                                        ? ticket.developer.profile_picture
+                                                        : 'https://github.com/shadcn.png'
+                                                }
+                                            />
+                                            <AvatarFallback className="font-medium text-gray-600 text-sm">
+                                                {' '}
+                                                {ticket.developer.first_name.charAt(0)}
+                                                {ticket.developer.last_name.charAt(0)}{' '}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <p className="text-gray-700">{ticket.developer.username}</p>
+                                    </div>
                                 ) : user?.role?.toLowerCase() === 'admin' ? (
                                     <select
                                         onChange={e =>
@@ -278,7 +464,7 @@ export default function Tickets() {
                                     </select>
                                 ) : (
                                     <>
-                                        <p className="text-red-400 text-sm">Non assigné</p>
+                                        {/* <p className="text-red-400 text-sm">Non assigné</p> */}
                                         {user?.role?.toLowerCase() === 'developer' && (
                                             <Button
                                                 size="sm"
@@ -348,15 +534,55 @@ export default function Tickets() {
                     {selectedTicket ? (
                         <>
                             <DialogHeader>
-                                <DialogTitle>{selectedTicket.title}</DialogTitle>
-                                <DialogDescription>
-                                    Priorité : {selectedTicket.priority ?? '—'} | Status :{' '}
-                                    {selectedTicket.status}
+                                <DialogTitle className="flex items-center justify-between mt-5">
+                                    {' '}
+                                    <p className="underline text-xl">Titre :</p>{' '}
+                                    {selectedTicket.title}
+                                </DialogTitle>
+                                <DialogDescription className="flex justify-between mt-2 font-medium text-gray-900">
+                                    <div className="flex space-x-5 items-center">
+                                        <p className="underline">Priorité : </p>
+                                        <span
+                                            className={` inline-flex items-center justify-center h-8 w-24 rounded text-sm font-medium ${
+                                                selectedTicket.priority === 'critique'
+                                                    ? 'text-red-600 bg-red-100 px-3 py-2 rounded '
+                                                    : selectedTicket.priority === 'haute'
+                                                    ? 'text-orange-500  bg-orange-100 px-3 py-2 rounded'
+                                                    : selectedTicket.priority === 'moyenne'
+                                                    ? 'text-yellow-400  bg-yellow-100 px-3 py-2 rounded'
+                                                    : 'text-green-500  bg-green-100 px-3 py-2 rounded'
+                                            }`}
+                                        >
+                                            {' '}
+                                            {priorityLabels[selectedTicket.priority] ?? '—'}
+                                        </span>{' '}
+                                    </div>
+
+                                    <div className="flex space-x-5 items-center">
+                                        <p className="underline">Status : </p>
+                                        <span
+                                            className={
+                                                selectedTicket.status === 'new'
+                                                    ? 'text-blue-400'
+                                                    : selectedTicket.status === ' in_progress'
+                                                    ? 'text-gray-700'
+                                                    : selectedTicket.status === 'resolved'
+                                                    ? ' text-green-600'
+                                                    : 'text-yellow-500'
+                                            }
+                                        >
+                                            {' '}
+                                            {statusLabels[selectedTicket.status]}
+                                        </span>
+                                    </div>
                                 </DialogDescription>
                             </DialogHeader>
-
-                            <p className="mt-4 text-gray-800">{selectedTicket.description}</p>
-
+                            <div>
+                                <p className="underline font-medium text-xl">Description:</p>
+                                <p className="mt-4 text-gray-800 text-sm">
+                                    {selectedTicket.description}
+                                </p>
+                            </div>
                             <div className="mt-6">
                                 <h2 className="font-medium mb-2">Commentaires</h2>
                                 <div className="space-y-4 max-h-64 overflow-y-auto">

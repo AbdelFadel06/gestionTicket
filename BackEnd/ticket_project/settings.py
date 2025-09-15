@@ -68,6 +68,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5173",
+    'https://gestion-ticket-rosy.vercel.app'
 ]
 
 ROOT_URLCONF = 'ticket_project.urls'
