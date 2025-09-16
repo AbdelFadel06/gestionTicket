@@ -11,8 +11,12 @@ import PrivateRoute from './routes/PrivateRoute'
 import PublicRoute from './routes/PublicRoute'
 import NewTicketForm from './components/NewTicketForm'
 import ProfilePage from './pages/ProfilePage'
+import { useEffect } from 'react'
 
 function App() {
+  useEffect(() => {
+    document.title = "Help Desk"
+  }, [])
     return (
         <AuthProvider>
             <BrowserRouter>
