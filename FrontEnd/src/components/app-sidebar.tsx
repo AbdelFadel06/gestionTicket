@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTheme } from 'next-themes'
 
 type MenuItem = {
     label: string
@@ -68,6 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { user } = useAuth()
     const location = useLocation()
     const navigate = useNavigate()
+    const { theme } = useTheme()
 
     // Sélection des menus selon le rôle
     let items: any[] = []
@@ -91,7 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }, [items, location.pathname, navigate])
 
     return (
-        <Sidebar variant="inset" {...props}>
+        <Sidebar variant="inset" {...props} className={theme === 'dark' ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-900'}>
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -115,11 +117,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarHeader>
 
             <SidebarContent>
-                <div className="text-sm mx-4 my-10 text-gray-700 space-y-3 flex flex-col">
+                <div className={`text-sm mx-4 my-10 space-y-3 flex flex-col ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                     {items.map((item, idx) =>
                         item.children ? (
                             <div key={idx} className="space-y-2">
-                                <p className="font-semibold text-gray-600">{item.label}</p>
+                                <p className={`font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{item.label}</p>
                                 <div className="ml-3 flex flex-col space-y-2">
                                     {item.children.map((sub: MenuItem, subIdx: number) => (
                                         <NavLink
@@ -127,9 +129,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             to={sub.path ?? '#'}
                                             end
                                             className={({ isActive }) =>
-                                                `px-3 py-1 rounded ${
+                                                `px-3 py-1 rounded transition-colors ${
                                                     isActive
-                                                        ? 'bg-black text-white'
+                                                        ? theme === 'dark'
+                                                            ? 'bg-blue-600 text-white'
+                                                            : 'bg-black text-white'
+                                                        : theme === 'dark'
+                                                        ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
                                                         : 'text-gray-700 hover:bg-gray-200 hover:text-gray-800'
                                                 }`
                                             }
@@ -145,9 +151,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 to={item.path ?? '#'}
                                 end
                                 className={({ isActive }) =>
-                                    `px-4 py-2 rounded ${
+                                    `px-4 py-2 rounded transition-colors ${
                                         isActive
-                                            ? 'bg-black text-white'
+                                            ? theme === 'dark'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-black text-white'
+                                            : theme === 'dark'
+                                            ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
                                             : 'text-gray-700 hover:bg-gray-200 hover:text-gray-800'
                                     }`
                                 }

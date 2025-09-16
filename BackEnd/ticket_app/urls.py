@@ -8,7 +8,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 from drf_spectacular.views import (SpectacularAPIView,SpectacularSwaggerView,SpectacularRedocView,)
 from ticket_app.views.authentication import MeView
 from .views.ticket import TicketStatsView, TicketChoicesView, TicketStatusUpdateView,users_and_developers,tickets_by_developer, tickets_by_user
-
+from .views.user import UserUpdateAPIView
 
 from ticket_app.personnal_auth.auth_views import login_view, refresh_view, protected_view, register_view, debug_check_user, debug_check_password
 
@@ -62,6 +62,9 @@ ticket_urlpatterns = [
     path('tickets/user/<int:user_id>/', tickets_by_user, name='tickets-by-user'),
     path('tickets/developer/<int:developer_id>/', tickets_by_developer, name='tickets-by-developer'),
     path("ticket/<int:pk>/status/", TicketStatusUpdateView.as_view(), name="ticket-status-update"),
+
+    path('users/<int:pk>/', UserUpdateAPIView.as_view(), name='update-user'),
+    path('users/me/', UserUpdateAPIView.as_view(), name='update-current-user'),
 
 
 ]

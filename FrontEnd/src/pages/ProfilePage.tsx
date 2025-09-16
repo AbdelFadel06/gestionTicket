@@ -10,7 +10,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+    <div className="flex justify-center items-center min-h-screen dark:bg-gray-950 bg-gray-100">
       <ProfileCard user={user} />
     </div>
   )

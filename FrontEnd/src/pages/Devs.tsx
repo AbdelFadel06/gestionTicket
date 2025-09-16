@@ -9,6 +9,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { useTheme } from 'next-themes'
 
 interface Developer {
     id: number
@@ -24,6 +25,7 @@ interface Ticket {
 }
 
 const Devs = () => {
+  const { theme } = useTheme()
     const [devs, setDevs] = useState<Developer[]>([])
     const [selectedDev, setSelectedDev] = useState<Developer | null>(null)
     const [tickets, setTickets] = useState<Ticket[]>([])
@@ -106,13 +108,13 @@ const Devs = () => {
         <>
             {/* Stats */}
             <div className="grid auto-rows-min gap-4 md:grid-cols-3 mb-4">
-                <div className="bg-yellow-100 aspect-video rounded-xl flex items-center justify-center">
+                <div className="bg-yellow-100 dark:bg-yellow-900 text-black dark:text-yellow-200 aspect-video rounded-xl flex items-center justify-center">
                     <span>Total Devs : {devs.length}</span>
                 </div>
-                <div className="bg-green-100 aspect-video rounded-xl flex items-center justify-center">
+                <div className="bg-green-100 dark:bg-green-900 text-black dark:text-green-200 aspect-video rounded-xl flex items-center justify-center">
                     <span>Tickets assignés (tous devs) : {totalTickets}</span>
                 </div>
-                <div className="bg-muted/50 aspect-video rounded-xl flex flex-col items-center justify-center">
+                <div className="bg-muted/50 dark:bg-gray-800 text-black dark:text-white aspect-video rounded-xl flex flex-col items-center justify-center">
                     <span>Dev sélectionné : {selectedDev ? selectedDev.username : 'Aucun'}</span>
                     {selectedDev && (
                         <span className="text-sm text-gray-600">
@@ -146,6 +148,11 @@ const Devs = () => {
                                             setSelectedDev(dev)
                                             fetchTicketsByDev(dev.id)
                                         }}
+                                        className={
+                                            theme === 'dark'
+                                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                                : 'bg-black hover:bg-gray-800 text-white'
+                                        }
                                     >
                                         Voir Tickets
                                     </Button>
