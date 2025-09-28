@@ -3,12 +3,22 @@ import { toast, Toaster } from 'react-hot-toast'
 import api from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
+import { X, Upload, FileText, Image, Download } from 'lucide-react'
+
+interface Attachment {
+  id?: number
+  file: File
+  title?: string
+  preview?: string
+}
 
 const NewTicketForm: React.FC = () => {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [priority, setPriority] = useState('basse')
     const [priorityChoices, setPriorityChoices] = useState<[string, string][]>([])
+    const [attachments, setAttachments] = useState<Attachment[]>([])
+    const [uploading, setUploading] = useState(false)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -26,6 +36,77 @@ const NewTicketForm: React.FC = () => {
         getChoices()
     }, [])
 
+    // Gestion des fichiers
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files
+        if (!files) return
+
+        const newAttachments: Attachment[] = []
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i]
+
+            // Vérification de la taille (10MB max)
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error(`Le fichier "${file.name}" dépasse la taille maximale de 10MB`)
+                continue
+            }
+
+            // Générer une prévisualisation pour les images
+            let preview = undefined
+            if (file.type.startsWith('image/')) {
+                preview = URL.createObjectURL(file)
+            }
+
+            newAttachments.push({
+                file,
+                title: file.name,
+                preview
+            })
+        }
+
+        setAttachments(prev => [...prev, ...newAttachments])
+        event.target.value = '' // Reset l'input
+    }
+
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => {
+            const newAttachments = [...prev]
+            // Libérer l'URL de prévisualisation si elle existe
+            if (newAttachments[index].preview) {
+                URL.revokeObjectURL(newAttachments[index].preview!)
+            }
+            newAttachments.splice(index, 1)
+            return newAttachments
+        })
+    }
+
+    // Upload des attachments après création du ticket
+    const uploadAttachments = async (ticketId: number) => {
+        if (attachments.length === 0) return
+
+        const uploadPromises = attachments.map(async (attachment) => {
+            const formData = new FormData()
+            formData.append('file', attachment.file)
+            if (attachment.title) {
+                formData.append('title', attachment.title)
+            }
+
+            try {
+                await api.post(`api/ticket/${ticketId}/attachments/`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                })
+            } catch (error) {
+                console.error('Erreur upload attachment:', error)
+                throw error
+            }
+        })
+
+        await Promise.all(uploadPromises)
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!title || !description) {
@@ -34,20 +115,66 @@ const NewTicketForm: React.FC = () => {
         }
 
         try {
-            await api.post('api/ticket/', { title, description, priority })
+            setUploading(true)
+
+            // 1. Créer le ticket
+            const ticketResponse = await api.post('api/ticket/', {
+                title,
+                description,
+                priority
+            })
+
+            const ticketId = ticketResponse.data.id
+
+            // 2. Uploader les attachments si il y en a
+            if (attachments.length > 0) {
+                await uploadAttachments(ticketId)
+            }
+
+            // 3. Reset et navigation
             setTitle('')
             setDescription('')
             setPriority('basse')
-            toast.success('Ticket enregistré avec succès')
+            setAttachments([])
+
+            toast.success('Ticket créé avec succès' + (attachments.length > 0 ? ` avec ${attachments.length} pièce(s) jointe(s)` : ''))
             navigate('/dashboard/tickets')
+
         } catch (error) {
             console.error(error)
             toast.error("Erreur dans l'enregistrement du ticket")
+        } finally {
+            setUploading(false)
         }
     }
 
+    // Nettoyer les URLs de prévisualisation
+    useEffect(() => {
+        return () => {
+            attachments.forEach(attachment => {
+                if (attachment.preview) {
+                    URL.revokeObjectURL(attachment.preview)
+                }
+            })
+        }
+    }, [attachments])
+
+    const getFileIcon = (file: File) => {
+        if (file.type.startsWith('image/')) return <Image className="h-4 w-4" />
+        if (file.type.includes('pdf')) return <FileText className="h-4 w-4" />
+        return <FileText className="h-4 w-4" />
+    }
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes === 0) return '0 Bytes'
+        const k = 1024
+        const sizes = ['Bytes', 'KB', 'MB', 'GB']
+        const i = Math.floor(Math.log(bytes) / Math.log(k))
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    }
+
     return (
-        <div className="max-w-xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-md min-h-[500px]">
+        <div className="max-w-2xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-md min-h-[500px]">
             <Toaster />
             <Button
                 variant="outline"
@@ -57,27 +184,29 @@ const NewTicketForm: React.FC = () => {
                 ← Retour aux tickets
             </Button>
 
-            <h2 className="text-2xl font-semibold mb-6 w-sm">Créer un nouveau ticket</h2>
+            <h2 className="text-2xl font-semibold mb-6">Créer un nouveau ticket</h2>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
                 {/* Input Titre */}
                 <div className="border-b border-gray-300 pb-2">
                     <input
                         type="text"
-                        placeholder="Titre"
+                        placeholder="Titre *"
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         className="w-full text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 bg-transparent"
+                        required
                     />
                 </div>
 
                 {/* Textarea Description */}
                 <div className="border-b border-gray-300 pb-2">
                     <textarea
-                        placeholder="Description"
+                        placeholder="Description *"
                         value={description}
                         onChange={e => setDescription(e.target.value)}
-                        className="w-full min-h-[150px] text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 bg-transparent"
+                        className="w-full min-h-[150px] text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 bg-transparent resize-vertical"
+                        required
                     />
                 </div>
 
@@ -97,8 +226,101 @@ const NewTicketForm: React.FC = () => {
                     </select>
                 </div>
 
-                <Button type="submit" className="w-full">
-                    Ajouter
+                {/* Upload d'attachments */}
+                <div className="border border-gray-300 rounded-lg p-4">
+                    <label className="block text-sm font-medium mb-3 text-gray-700">
+                        Pièces jointes (optionnel)
+                    </label>
+
+                    {/* Zone de drop */}
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors mb-4">
+                        <input
+                            type="file"
+                            multiple
+                            onChange={handleFileSelect}
+                            className="hidden"
+                            id="file-upload"
+                            accept="*/*"
+                        />
+                        <label
+                            htmlFor="file-upload"
+                            className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+                        >
+                            <Upload className="h-8 w-8 text-gray-400" />
+                            <div className="text-sm">
+                                <span className="text-blue-600 hover:text-blue-500 font-medium">
+                                    Cliquez pour uploader
+                                </span>
+                                <span className="text-gray-500"> ou glissez-déposez</span>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                Fichiers jusqu'à 10MB (images, PDF, documents, etc.)
+                            </p>
+                        </label>
+                    </div>
+
+                    {/* Liste des fichiers sélectionnés */}
+                    {attachments.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-700">
+                                Fichiers sélectionnés ({attachments.length})
+                            </p>
+                            {attachments.map((attachment, index) => (
+                                <div
+                                    key={index}
+                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                                >
+                                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                        <div className="flex-shrink-0">
+                                            {attachment.preview ? (
+                                                <img
+                                                    src={attachment.preview}
+                                                    alt="Preview"
+                                                    className="h-10 w-10 object-cover rounded"
+                                                />
+                                            ) : (
+                                                <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
+                                                    {getFileIcon(attachment.file)}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate text-gray-800">
+                                                {attachment.file.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {formatFileSize(attachment.file.size)} • {attachment.file.type}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeAttachment(index)}
+                                        className="flex-shrink-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={uploading || !title || !description}
+                >
+                    {uploading ? (
+                        <div className="flex items-center justify-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>Création en cours...</span>
+                        </div>
+                    ) : (
+                        'Créer le ticket'
+                    )}
                 </Button>
             </form>
         </div>

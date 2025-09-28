@@ -23,7 +23,7 @@ class TicketCreateSerializer(serializers.ModelSerializer):
         if not value:
             return 'basse'
         return value
-    
+
     def create(self, validated_data):
         file = None
         if 'file' in validated_data:
@@ -37,6 +37,7 @@ class TicketRetrieveSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     developer = UserSerializer(read_only=True)
     comments = CommentRetrieveSerializer(many=True, read_only=True)
+    attachments = AttachmentSerializer(many=True, read_only=True)
     class Meta:
         model = Ticket
         fields = "__all__"

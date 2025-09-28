@@ -1,11 +1,11 @@
 
-GET http://127.0.0.1:8000/api/ticket/
+GET http://127.0.0.1:8000/api/ticket/32/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3NDM0MDQwLCJpYXQiOjE3NTczNDc2NDAsImp0aSI6ImEwZGQyMmYzNzE4ZjQyN2JhMWJkOGY2NzczODkxZDhhIiwidXNlcl9pZCI6IjE0In0.ChKo8_U-4_g8j0JX3ZiXxhMhBvDyrSRueLmX4iJ9tO4
-
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU5MTUxMjU4LCJpYXQiOjE3NTkwNjQ4NTgsImp0aSI6IjhlY2VlMGI1YTU3ODRkYWI4MjJhN2ZmMzQ2ODljNzk1IiwidXNlcl9pZCI6IjE3In0.Ym3t5qCwae_jLfzyp7k6vpcfNKriiVCpjUWJC4-6c8k
 ###
 
 POST http://127.0.0.1:8000/api/ticket/
+
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2OTQ4MTY3LCJpYXQiOjE3NTY4NjE3NjcsImp0aSI6Ijk5NzRlMmZlMDc2NjQyMzNiNjQ4YWIxNjAyNjFiMWQ0IiwidXNlcl9pZCI6IjExIn0.PGiaYf4MfW47C1uG7I1vwn1tWsUucwvothK1-M1p1ks
 

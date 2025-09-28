@@ -50,6 +50,8 @@ ticket_urlpatterns = [
     path('ticket/', TicketMixinView.as_view(), name='ticket-list'),
     path('ticket/<int:pk>/', TicketRetrieveDestroyView.as_view(), name='retrieve-ticket'),
 
+    path('ticket/<int:ticket_id>/attachments/', AttachmentListCreateView.as_view(), name='ticket-attachments'),
+
     path('ticket/<int:pk>/accepted/', accepted, name='accepted-ticket'),
     path('ticket/<int:pk>/closed/', closed, name='closed-ticket'),
     path('ticket/<int:pk>/status/', setstatus, name='status-ticket'),

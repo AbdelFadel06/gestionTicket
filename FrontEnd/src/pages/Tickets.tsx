@@ -17,6 +17,7 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog'
+import Attachments from '@/components/Attachments'
 
 interface User {
     id: number
@@ -35,6 +36,14 @@ interface Comment {
     created_at: string
 }
 
+// Ajouter cette interface
+interface Attachment {
+    id: number
+    title: string
+    file: string
+}
+
+// Modifier l'interface Ticket pour inclure les attachments
 interface Ticket {
     id: number
     title: string
@@ -44,6 +53,7 @@ interface Ticket {
     developer?: User | null
     author?: User
     comments?: Comment[]
+    attachments?: Attachment[] // ← Ajouter cette ligne
 }
 
 export default function Tickets() {
@@ -58,6 +68,7 @@ export default function Tickets() {
 
     const [statusLabels, setStatusLabels] = useState<Record<string, string>>({})
     const [priorityLabels, setPriorityLabels] = useState<Record<string, string>>({})
+    const [loadingAttachments, setLoadingAttachments] = useState(false)
 
     useEffect(() => {
         getTickets()
@@ -171,6 +182,31 @@ export default function Tickets() {
             )
         } catch (err) {
             console.error('Erreur récupération choices', err)
+        }
+    }
+
+    const fetchAttachments = async (ticketId: number) => {
+        try {
+            setLoadingAttachments(true)
+            const res = await api.get(`api/ticket/${ticketId}/attachments/`)
+            return res.data
+        } catch (error) {
+            console.error('Erreur chargement attachments:', error)
+            toast.error('Erreur lors du chargement des pièces jointes')
+            return []
+        } finally {
+            setLoadingAttachments(false)
+        }
+    }
+
+    const handleViewTicket = async (ticket: Ticket) => {
+        setSelectedTicket(ticket)
+        setDialogOpen(true)
+
+        // Charger les attachments si le ticket n'en a pas déjà
+        if (!ticket.attachments) {
+            const attachments = await fetchAttachments(ticket.id)
+            setSelectedTicket(prev => (prev ? { ...prev, attachments } : null))
         }
     }
 
@@ -443,19 +479,14 @@ export default function Tickets() {
                     theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
                 }`}
             >
-                
-
                 <TicketsTable
-                    tickets={filteredTickets} // ← Correction : utiliser filteredTickets
+                    tickets={filteredTickets}
                     theme={theme || 'light'}
                     user={user}
                     devs={devs}
                     statusLabels={statusLabels}
                     priorityLabels={priorityLabels}
-                    onView={ticket => {
-                        setSelectedTicket(ticket)
-                        setDialogOpen(true)
-                    }}
+                    onView={handleViewTicket}
                     onDelete={deleteTicket}
                     onAssignDev={handleAssignDev}
                     onAssignToMe={handleAssignToMe}
@@ -466,53 +497,54 @@ export default function Tickets() {
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent
-                    className={`max-w-2xl ${
+                    className={`w-full max-w-4xl overflow-hidden ${
                         theme === 'dark'
                             ? 'bg-gray-900 text-white border-gray-700'
                             : 'bg-white text-gray-900'
                     }`}
                 >
                     {selectedTicket ? (
-                        <>
+                        <div className="space-y-6 overflow-hidden">
+                            {/* Header */}
                             <DialogHeader>
-                                <DialogTitle className="flex items-center justify-between mt-5">
-                                    {' '}
-                                    <p className="underline text-xl">Titre :</p>{' '}
-                                    {selectedTicket.title}
+                                <DialogTitle className="flex items-center justify-between mt-5 min-w-0">
+                                    <p className="underline text-xl flex-shrink-0">Titre :</p>
+                                    <span className="ml-2 truncate">{selectedTicket.title}</span>
                                 </DialogTitle>
+
                                 <DialogDescription
-                                    className={`flex justify-between mt-2 font-medium ${
+                                    className={`flex flex-wrap justify-between mt-2 font-medium gap-4 ${
                                         theme === 'dark' ? 'text-gray-300' : 'text-gray-900'
                                     }`}
                                 >
                                     <div className="flex space-x-5 items-center">
-                                        <p className="underline">Priorité : </p>
+                                        <p className="underline">Priorité :</p>
+                                        {/* badge priorité */}
                                         <span
-                                            className={`inline-flex items-center justify-center h-8 w-24 rounded text-sm font-medium ${
+                                            className={`inline-flex items-center justify-center h-8 px-3 py-2 rounded text-sm font-medium ${
                                                 selectedTicket.priority === 'critique'
                                                     ? theme === 'dark'
-                                                        ? 'text-red-300 bg-red-900/30 px-3 py-2 rounded'
-                                                        : 'text-red-600 bg-red-100 px-3 py-2 rounded'
+                                                        ? 'text-red-300 bg-red-900/30'
+                                                        : 'text-red-600 bg-red-100'
                                                     : selectedTicket.priority === 'haute'
                                                     ? theme === 'dark'
-                                                        ? 'text-orange-300 bg-orange-900/30 px-3 py-2 rounded'
-                                                        : 'text-orange-500 bg-orange-100 px-3 py-2 rounded'
+                                                        ? 'text-orange-300 bg-orange-900/30'
+                                                        : 'text-orange-500 bg-orange-100'
                                                     : selectedTicket.priority === 'moyenne'
                                                     ? theme === 'dark'
-                                                        ? 'text-yellow-300 bg-yellow-900/30 px-3 py-2 rounded'
-                                                        : 'text-yellow-400 bg-yellow-100 px-3 py-2 rounded'
+                                                        ? 'text-yellow-300 bg-yellow-900/30'
+                                                        : 'text-yellow-400 bg-yellow-100'
                                                     : theme === 'dark'
-                                                    ? 'text-green-300 bg-green-900/30 px-3 py-2 rounded'
-                                                    : 'text-green-500 bg-green-100 px-3 py-2 rounded'
+                                                    ? 'text-green-300 bg-green-900/30'
+                                                    : 'text-green-500 bg-green-100'
                                             }`}
                                         >
-                                            {' '}
                                             {priorityLabels[selectedTicket.priority] ?? '—'}
-                                        </span>{' '}
+                                        </span>
                                     </div>
 
                                     <div className="flex space-x-5 items-center">
-                                        <p className="underline">Status : </p>
+                                        <p className="underline">Status :</p>
                                         <span
                                             className={
                                                 selectedTicket.status === 'new'
@@ -532,25 +564,35 @@ export default function Tickets() {
                                                     : 'text-yellow-500'
                                             }
                                         >
-                                            {' '}
                                             {statusLabels[selectedTicket.status]}
                                         </span>
                                     </div>
                                 </DialogDescription>
                             </DialogHeader>
+
+                            {/* Description */}
                             <div>
-                                <p className="underline font-medium text-xl">Description:</p>
+                                <p className="underline font-medium text-xl">Description :</p>
                                 <p
-                                    className={`mt-4 text-sm ${
+                                    className={`mt-4 text-sm break-words ${
                                         theme === 'dark' ? 'text-gray-300' : 'text-gray-800'
                                     }`}
                                 >
                                     {selectedTicket.description}
                                 </p>
                             </div>
-                            <div className="mt-6">
+
+                            {/* Attachments */}
+                            <Attachments
+                                selectedTicket={selectedTicket}
+                                loadingAttachments={loadingAttachments}
+                                theme={theme}
+                            />
+
+                            {/* Commentaires */}
+                            <div className="mt-6 overflow-hidden">
                                 <h2 className="font-medium mb-2">Commentaires</h2>
-                                <div className="space-y-4 max-h-64 overflow-y-auto">
+                                <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
                                     {selectedTicket.comments &&
                                     selectedTicket.comments.length > 0 ? (
                                         selectedTicket.comments.map(comment => (
@@ -598,7 +640,7 @@ export default function Tickets() {
                                                     </div>
                                                 </div>
                                                 <p
-                                                    className={`ml-10 ${
+                                                    className={`ml-10 break-words ${
                                                         theme === 'dark'
                                                             ? 'text-gray-300'
                                                             : 'text-gray-700'
@@ -623,7 +665,7 @@ export default function Tickets() {
                                     user?.id === selectedTicket.developer?.id) && (
                                     <div className="mt-4">
                                         <textarea
-                                            className={`w-full p-2 border rounded ${
+                                            className={`w-full p-2 border rounded resize-none ${
                                                 theme === 'dark'
                                                     ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400'
                                                     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -644,6 +686,7 @@ export default function Tickets() {
                                 )}
                             </div>
 
+                            {/* Footer */}
                             <DialogFooter className="mt-4">
                                 <Button
                                     variant="outline"
@@ -657,7 +700,7 @@ export default function Tickets() {
                                     Fermer
                                 </Button>
                             </DialogFooter>
-                        </>
+                        </div>
                     ) : (
                         <p>Aucun ticket sélectionné</p>
                     )}
