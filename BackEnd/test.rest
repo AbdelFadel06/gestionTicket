@@ -81,6 +81,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiY
 
 ###
 
-GET http://127.0.0.1:8000/api/ticket/
+GET http://127.0.0.1:8000/api/users/9/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3OTM4OTY1LCJpYXQiOjE3NTc4NTI1NjUsImp0aSI6ImNhM2Q2MzA5MTdlZDRlYjFiMzQ3NzEwZDJlNmQ5ZjZjIiwidXNlcl9pZCI6IjE3In0.XqGGz7ZK76mJ0EpQDnViB8EaVwcZy9CBdtaH6gLWCDk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU5MDg3NzExLCJpYXQiOjE3NTkwMDEzMTEsImp0aSI6ImUwMzFkZDkyMjA3NDRiMGY5NzM5ODg4YjNkOGYwOWMyIiwidXNlcl9pZCI6IjE3In0.HnmvUnXBiSfx7V_auVnyW-5-EVhFMnFPVGTEPMWzRh4

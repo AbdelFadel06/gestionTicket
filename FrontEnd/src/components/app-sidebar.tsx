@@ -51,8 +51,7 @@ const sidebarConfig = {
         {
             label: 'Tickets',
             children: [
-                { label: 'Tickets déjà assignés', path: '/dashboard/tickets/assignes' },
-                { label: 'Tickets non assignés', path: '/dashboard/tickets/non-assignes' },
+                { label: 'Tout les tickets ', path: '/dashboard/tickets' },
             ],
         },
         {

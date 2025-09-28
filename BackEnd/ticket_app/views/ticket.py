@@ -11,7 +11,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from django.utils.translation import gettext as _
 from rest_framework.views import APIView
-
+from django.shortcuts import get_object_or_404
 
 
 class TicketViewSet(viewsets.ViewSet):
@@ -433,6 +433,12 @@ def users_and_developers(request):
         "users": UserMeSerializer(users, many=True).data,
         "developers": UserMeSerializer(developers, many=True).data,
     })
+
+@api_view(['GET'])
+def user_detail(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    serializer = UserMeSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 # Tickets créés par un user spécifique
 @api_view(['GET'])

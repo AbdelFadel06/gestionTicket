@@ -11,12 +11,10 @@ import PrivateRoute from './routes/PrivateRoute'
 import PublicRoute from './routes/PublicRoute'
 import NewTicketForm from './components/NewTicketForm'
 import ProfilePage from './pages/ProfilePage'
-import { useEffect } from 'react'
+import ClientTickets from './pages/ClientTickets'
+import DevTicketsPage from './pages/DevTicketsPage'
 
 function App() {
-  useEffect(() => {
-    document.title = "Help Desk"
-  }, [])
     return (
         <AuthProvider>
             <BrowserRouter>
@@ -35,7 +33,11 @@ function App() {
                             <Route path="tickets/:filter" element={<Tickets />} />
                             <Route path="clients" element={<Clients />} />
                             <Route path="devs" element={<Devs />} />
-                            <Route path="profile" element={<ProfilePage/>} />
+                            <Route path="profile" element={<ProfilePage />} />
+
+                            <Route path="clients/:id/tickets" element={<ClientTickets />} />
+                            <Route path="devs/:devId/tickets" element={<DevTicketsPage />} />
+
                         </Route>
                     </Route>
                 </Routes>

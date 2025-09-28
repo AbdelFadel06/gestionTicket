@@ -86,7 +86,7 @@ const LoginPage = () => {
                     <p className="mt-4 text-sm text-gray-400">
                         Vous n'avez pas encore de compte ?{' '}
                         <a href="/register" className="text-blue-600 underline">
-                            Sign in
+                            Sign up
                         </a>{' '}
                     </p>
                 </form>

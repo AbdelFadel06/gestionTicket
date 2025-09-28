@@ -1,23 +1,13 @@
-import { Trash2, Eye } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTheme } from 'next-themes'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { toast, Toaster } from 'react-hot-toast'
-
+import TicketsTable from '@/components/TicketsTable'
 import { PieChart, Pie, Cell, Tooltip as ReTooltip, Legend, ResponsiveContainer } from 'recharts'
 
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -27,7 +17,6 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 interface User {
     id: number
@@ -67,7 +56,6 @@ export default function Tickets() {
     const [newComment, setNewComment] = useState('')
     const [loadingComment, setLoadingComment] = useState(false)
 
-    // dictionnaire des labels
     const [statusLabels, setStatusLabels] = useState<Record<string, string>>({})
     const [priorityLabels, setPriorityLabels] = useState<Record<string, string>>({})
 
@@ -167,7 +155,7 @@ export default function Tickets() {
         } finally {
             setLoadingComment(false)
         }
-    } // Récupérer les choix depuis l'API
+    }
     const getChoices = async () => {
         try {
             const res = await api.get('/api/ticket/choices/')
@@ -186,24 +174,42 @@ export default function Tickets() {
         }
     }
 
-    const [filterStatus, setFilterStatus] = useState<string>('') // '' = tous
-    const [filterPriority, setFilterPriority] = useState<string>('') // '' = toutes
-    const [searchTitle, setSearchTitle] = useState<string>('') // recherche par titre
+    const navigate = useNavigate()
+    const handleFilterChange = (newFilter: string) => {
+        if (newFilter === '') {
+            navigate('/dashboard/tickets')
+        } else {
+            navigate(`/dashboard/tickets/${newFilter}`)
+        }
+    }
+
+    const [filterStatus, setFilterStatus] = useState<string>('')
+    const [filterPriority, setFilterPriority] = useState<string>('')
+    const [searchTitle, setSearchTitle] = useState<string>('')
 
     const totalTickets = tickets.length
     const unassignedTickets = tickets.filter(t => !t.developer).length
     const resolvedTickets = tickets.filter(t => t.status === 'resolved').length
 
-    const [devs, setDevs] = useState<User[]>([]) // liste des devs pour admin
+    const [devs, setDevs] = useState<User[]>([])
 
     const filteredTickets = tickets.filter(ticket => {
+        const matchesAssignment =
+            filter === 'assignes'
+                ? ticket.developer !== null
+                : filter === 'non-assignes'
+                ? ticket.developer === null
+                : filter === 'resolus'
+                ? ticket.status === 'resolved'
+                : true
+
         const matchesStatus = filterStatus ? ticket.status === filterStatus : true
         const matchesPriority = filterPriority ? ticket.priority === filterPriority : true
         const matchesTitle = searchTitle
             ? ticket.title.toLowerCase().includes(searchTitle.toLowerCase())
             : true
 
-        return matchesStatus && matchesPriority && matchesTitle
+        return matchesAssignment && matchesStatus && matchesPriority && matchesTitle
     })
 
     const statusData = Object.entries(
@@ -228,7 +234,6 @@ export default function Tickets() {
         value: count,
     }))
 
-    // Couleurs (tu peux adapter)
     const COLORS = ['#2563eb', '#f59e0b', '#22c55e', '#ef4444', '#9333ea']
 
     return (
@@ -239,7 +244,6 @@ export default function Tickets() {
         >
             <Toaster />
 
-            {/* Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div
                     className={`aspect-video rounded-xl flex flex-col items-center justify-center bg-yellow-100 dark:bg-yellow-900 text-black dark:text-yellow-200`}
@@ -263,10 +267,8 @@ export default function Tickets() {
                 </div>
             </div>
 
-            {/* Stats + Donuts (admin only) */}
             {user?.role?.toLowerCase() === 'admin' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Donut par statut */}
                     <div
                         className={`shadow rounded-xl p-4 flex flex-col items-center ${
                             theme === 'dark' ? 'bg-gray-800' : 'bg-white'
@@ -389,6 +391,21 @@ export default function Tickets() {
                     ))}
                 </select>
 
+                <select
+                    value={filter || ''}
+                    onChange={e => handleFilterChange(e.target.value)}
+                    className={`border rounded px-2 py-1 ${
+                        theme === 'dark'
+                            ? 'bg-gray-800 border-gray-700 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                >
+                    <option value="">Tous les tickets</option>
+                    <option value="assignes">Assignés</option>
+                    <option value="non-assignes">Non assignés</option>
+                    <option value="resolus">Résolus</option>
+                </select>
+
                 {/* Recherche par titre */}
                 <input
                     type="text"
@@ -401,6 +418,23 @@ export default function Tickets() {
                             : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                     }`}
                 />
+
+                <Button
+                    variant="outline"
+                    onClick={() => {
+                        setFilterStatus('')
+                        setFilterPriority('')
+                        setSearchTitle('')
+                        navigate('/dashboard/tickets')
+                    }}
+                    className={`${
+                        theme === 'dark'
+                            ? 'border-gray-700 text-white hover:bg-gray-800'
+                            : 'border-gray-300 text-gray-900 hover:bg-gray-100'
+                    }`}
+                >
+                    Réinitialiser
+                </Button>
             </div>
 
             {/* Tableau */}
@@ -409,254 +443,27 @@ export default function Tickets() {
                     theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
                 }`}
             >
-                <Table>
-                    <TableHeader className={theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'}>
-                        <TableRow>
-                            <TableHead
-                                className={theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}
-                            >
-                                #
-                            </TableHead>
-                            <TableHead
-                                className={theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}
-                            >
-                                Titre
-                            </TableHead>
-                            <TableHead
-                                className={theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}
-                            >
-                                Priorite
-                            </TableHead>
-                            <TableHead
-                                className={theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}
-                            >
-                                Status
-                            </TableHead>
-                            <TableHead
-                                className={theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}
-                            >
-                                Assigné à
-                            </TableHead>
-                            <TableHead
-                                className={`text-center ${
-                                    theme === 'dark' ? 'text-gray-300' : 'text-gray-900'
-                                }`}
-                            >
-                                Actions
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredTickets.map((ticket, i) => (
-                            <TableRow
-                                key={ticket.id}
-                                className={theme === 'dark' ? 'border-gray-700' : ''}
-                            >
-                                <TableCell className={theme === 'dark' ? 'text-gray-300' : ''}>
-                                    {i + 1}
-                                </TableCell>
-                                <TableCell className={theme === 'dark' ? 'text-gray-300' : ''}>
-                                    {ticket.title}
-                                </TableCell>
-                                <TableCell>
-                                    <span
-                                        className={`inline-flex items-center justify-center h-8 w-24 rounded text-sm font-medium ${
-                                            ticket.priority === 'critique'
-                                                ? theme === 'dark'
-                                                    ? 'text-red-300 bg-red-900/30 px-3 py-2 rounded'
-                                                    : 'text-red-600 bg-red-100 px-3 py-2 rounded'
-                                                : ticket.priority === 'haute'
-                                                ? theme === 'dark'
-                                                    ? 'text-orange-300 bg-orange-900/30 px-3 py-2 rounded'
-                                                    : 'text-orange-500 bg-orange-100 px-3 py-2 rounded'
-                                                : ticket.priority === 'moyenne'
-                                                ? theme === 'dark'
-                                                    ? 'text-yellow-300 bg-yellow-900/30 px-3 py-2 rounded'
-                                                    : 'text-yellow-400 bg-yellow-100 px-3 py-2 rounded'
-                                                : theme === 'dark'
-                                                ? 'text-green-300 bg-green-900/30 px-3 py-2 rounded'
-                                                : 'text-green-500 bg-green-100 px-3 py-2 rounded'
-                                        }`}
-                                    >
-                                        {ticket.priority
-                                            ? priorityLabels[ticket.priority] ?? ticket.priority
-                                            : 'N/A'}
-                                    </span>
-                                </TableCell>
-                                {/* status → modifiable si dev */}
-                                <TableCell>
-                                    <span
-                                        className={
-                                            ticket.status === 'new'
-                                                ? theme === 'dark'
-                                                    ? 'text-blue-300'
-                                                    : 'text-blue-400'
-                                                : ticket.status === 'in_progress'
-                                                ? theme === 'dark'
-                                                    ? 'text-gray-300'
-                                                    : 'text-gray-700'
-                                                : ticket.status === 'resolved'
-                                                ? theme === 'dark'
-                                                    ? 'text-green-300'
-                                                    : 'text-green-600'
-                                                : theme === 'dark'
-                                                ? 'text-yellow-300'
-                                                : 'text-yellow-500'
-                                        }
-                                    >
-                                        {user?.role?.toLowerCase() === 'developer' &&
-                                        ticket.developer?.id === user.id ? (
-                                            <select
-                                                value={ticket.status}
-                                                onChange={e =>
-                                                    handleChangeStatus(ticket.id, e.target.value)
-                                                }
-                                                className={`border rounded px-2 py-1 ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gray-800 border-gray-700 text-white'
-                                                        : 'bg-white border-gray-300 text-gray-900'
-                                                }`}
-                                            >
-                                                {Object.entries(statusLabels).map(
-                                                    ([value, label]) => (
-                                                        <option key={value} value={value}>
-                                                            {label}
-                                                        </option>
-                                                    )
-                                                )}
-                                            </select>
-                                        ) : (
-                                            statusLabels[ticket.status] ?? ticket.status
-                                        )}
-                                    </span>
-                                </TableCell>
-                                <TableCell className="font-medium">
-                                    {ticket.developer ? (
-                                        <div className="flex items-center space-x-4">
-                                            <Avatar>
-                                                <AvatarImage
-                                                    src={
-                                                        ticket.developer.profile_picture
-                                                            ? ticket.developer.profile_picture
-                                                            : 'https://github.com/shadcn.png'
-                                                    }
-                                                />
-                                                <AvatarFallback
-                                                    className={`font-medium text-sm ${
-                                                        theme === 'dark'
-                                                            ? 'text-gray-300'
-                                                            : 'text-gray-600'
-                                                    }`}
-                                                >
-                                                    {' '}
-                                                    {ticket.developer.first_name.charAt(0)}
-                                                    {ticket.developer.last_name.charAt(0)}{' '}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <p
-                                                className={
-                                                    theme === 'dark'
-                                                        ? 'text-gray-300'
-                                                        : 'text-gray-700'
-                                                }
-                                            >
-                                                {ticket.developer.username}
-                                            </p>
-                                        </div>
-                                    ) : user?.role?.toLowerCase() === 'admin' ? (
-                                        <select
-                                            onChange={e =>
-                                                handleAssignDev(ticket.id, parseInt(e.target.value))
-                                            }
-                                            defaultValue=""
-                                            className={`border rounded px-2 py-1 ${
-                                                theme === 'dark'
-                                                    ? 'bg-gray-800 border-gray-700 text-white'
-                                                    : 'bg-white border-gray-300 text-gray-900'
-                                            }`}
-                                        >
-                                            <option value="">-- Choisir dev --</option>
-                                            {devs.map(dev => (
-                                                <option key={dev.id} value={dev.id}>
-                                                    {dev.username}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <>
-                                            {user?.role?.toLowerCase() === 'developer' && (
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => handleAssignToMe(ticket.id)}
-                                                    className={`mt-1 ${
-                                                        theme === 'dark'
-                                                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                                            : 'bg-black hover:bg-gray-800 text-white'
-                                                    }`}
-                                                >
-                                                    Prendre en charge
-                                                </Button>
-                                            )}
-                                        </>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    <div className="grid grid-cols-2 gap-1">
-                                        {/* Voir plus - Bouton en bleu comme demandé */}
-                                        {/* Voir plus - Bouton noir en mode clair, bleu en mode sombre */}
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        size="icon"
-                                                        onClick={() => {
-                                                            setSelectedTicket(ticket)
-                                                            setDialogOpen(true)
-                                                        }}
-                                                        className={`h-10 w-12 ${
-                                                            theme === 'dark'
-                                                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                                                : 'bg-black hover:bg-gray-800 text-white'
-                                                        }`}
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Voir plus</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
+                
 
-                                        {/* Supprimer (uniquement si auteur) */}
-                                        {ticket.author?.id === user?.id && (
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            size="icon"
-                                                            variant="destructive"
-                                                            onClick={() => deleteTicket(ticket.id)}
-                                                            className="h-10 w-12"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Supprimer</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        )}
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                <TicketsTable
+                    tickets={filteredTickets} // ← Correction : utiliser filteredTickets
+                    theme={theme || 'light'}
+                    user={user}
+                    devs={devs}
+                    statusLabels={statusLabels}
+                    priorityLabels={priorityLabels}
+                    onView={ticket => {
+                        setSelectedTicket(ticket)
+                        setDialogOpen(true)
+                    }}
+                    onDelete={deleteTicket}
+                    onAssignDev={handleAssignDev}
+                    onAssignToMe={handleAssignToMe}
+                    onChangeStatus={handleChangeStatus}
+                    itemsPerPage={10}
+                />
             </div>
 
-            {/* Dialog voir plus */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent
                     className={`max-w-2xl ${
@@ -812,7 +619,6 @@ export default function Tickets() {
                                     )}
                                 </div>
 
-                                {/* Ajouter commentaire si author ou developer */}
                                 {(user?.id === selectedTicket.author?.id ||
                                     user?.id === selectedTicket.developer?.id) && (
                                     <div className="mt-4">
