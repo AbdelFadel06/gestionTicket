@@ -4,6 +4,7 @@ import api from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
 import { X, Upload, FileText, Image, Download } from 'lucide-react'
+import { useTheme } from 'next-themes'
 
 interface Attachment {
   id?: number
@@ -20,6 +21,7 @@ const NewTicketForm: React.FC = () => {
     const [attachments, setAttachments] = useState<Attachment[]>([])
     const [uploading, setUploading] = useState(false)
     const navigate = useNavigate()
+    const { theme } = useTheme()
 
     useEffect(() => {
         const getChoices = async () => {
@@ -173,49 +175,89 @@ const NewTicketForm: React.FC = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }
 
+    // Classes CSS conditionnelles pour le thème
+    const containerClass = `max-w-2xl mx-auto mt-10 p-8 rounded-lg shadow-md min-h-[500px] ${
+        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
+    }`
+
+    const inputClass = `w-full placeholder-gray-400 focus:outline-none focus:ring-0 bg-transparent ${
+        theme === 'dark' ? 'text-white' : 'text-gray-800'
+    }`
+
+    const borderClass = theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
+    const placeholderClass = theme === 'dark' ? 'placeholder-gray-500' : 'placeholder-gray-400'
+
+    const selectClass = `w-full focus:outline-none ${
+        theme === 'dark'
+            ? 'bg-gray-800 text-white border-gray-700'
+            : 'bg-white text-gray-800 border-gray-300'
+    }`
+
+    const attachmentZoneClass = `border-2 border-dashed rounded-lg p-6 text-center transition-colors mb-4 ${
+        theme === 'dark'
+            ? 'border-gray-600 hover:border-gray-500 bg-gray-800'
+            : 'border-gray-300 hover:border-gray-400 bg-gray-50'
+    }`
+
+    const attachmentItemClass = `flex items-center justify-between p-3 rounded-lg border ${
+        theme === 'dark'
+            ? 'bg-gray-800 border-gray-700'
+            : 'bg-gray-50 border-gray-200'
+    }`
+
+    const textColorClass = theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+    const textColorDarkClass = theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+    const textMutedClass = theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
+
     return (
-        <div className="max-w-2xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-md min-h-[500px]">
+        <div className={containerClass}>
             <Toaster />
             <Button
                 variant="outline"
-                className="mb-6"
+                className={`mb-6 ${
+                    theme === 'dark'
+                        ? 'border-gray-700 text-white hover:bg-gray-800'
+                        : 'border-gray-300 text-gray-900 hover:bg-gray-100'
+                }`}
                 onClick={() => navigate('/dashboard/tickets')}
             >
                 ← Retour aux tickets
             </Button>
 
-            <h2 className="text-2xl font-semibold mb-6">Créer un nouveau ticket</h2>
+            <h2 className={`text-2xl font-semibold mb-6 ${textColorDarkClass}`}>
+                Créer un nouveau ticket
+            </h2>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
                 {/* Input Titre */}
-                <div className="border-b border-gray-300 pb-2">
+                <div className={`border-b pb-2 ${borderClass}`}>
                     <input
                         type="text"
                         placeholder="Titre *"
                         value={title}
                         onChange={e => setTitle(e.target.value)}
-                        className="w-full text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 bg-transparent"
+                        className={`${inputClass} ${placeholderClass}`}
                         required
                     />
                 </div>
 
                 {/* Textarea Description */}
-                <div className="border-b border-gray-300 pb-2">
+                <div className={`border-b pb-2 ${borderClass}`}>
                     <textarea
                         placeholder="Description *"
                         value={description}
                         onChange={e => setDescription(e.target.value)}
-                        className="w-full min-h-[150px] text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 bg-transparent resize-vertical"
+                        className={`${inputClass} ${placeholderClass} min-h-[150px] resize-vertical`}
                         required
                     />
                 </div>
 
                 {/* Select Priorité */}
-                <div className="border border-gray-300 rounded-md p-2">
+                <div className={`border rounded-md p-2 ${borderClass}`}>
                     <select
                         value={priority}
                         onChange={e => setPriority(e.target.value)}
-                        className="w-full text-gray-800 bg-white focus:outline-none"
+                        className={selectClass}
                     >
                         <option value="">-- Sélectionner une priorité --</option>
                         {priorityChoices.map(([value, label]) => (
@@ -227,13 +269,13 @@ const NewTicketForm: React.FC = () => {
                 </div>
 
                 {/* Upload d'attachments */}
-                <div className="border border-gray-300 rounded-lg p-4">
-                    <label className="block text-sm font-medium mb-3 text-gray-700">
+                <div className={`border rounded-lg p-4 ${borderClass}`}>
+                    <label className={`block text-sm font-medium mb-3 ${textColorClass}`}>
                         Pièces jointes (optionnel)
                     </label>
 
                     {/* Zone de drop */}
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors mb-4">
+                    <div className={attachmentZoneClass}>
                         <input
                             type="file"
                             multiple
@@ -246,14 +288,20 @@ const NewTicketForm: React.FC = () => {
                             htmlFor="file-upload"
                             className="cursor-pointer flex flex-col items-center justify-center space-y-2"
                         >
-                            <Upload className="h-8 w-8 text-gray-400" />
+                            <Upload className={`h-8 w-8 ${
+                                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                            }`} />
                             <div className="text-sm">
-                                <span className="text-blue-600 hover:text-blue-500 font-medium">
+                                <span className={`font-medium ${
+                                    theme === 'dark'
+                                        ? 'text-blue-400 hover:text-blue-300'
+                                        : 'text-blue-600 hover:text-blue-500'
+                                }`}>
                                     Cliquez pour uploader
                                 </span>
-                                <span className="text-gray-500"> ou glissez-déposez</span>
+                                <span className={textMutedClass}> ou glissez-déposez</span>
                             </div>
-                            <p className="text-xs text-gray-500">
+                            <p className={`text-xs ${textMutedClass}`}>
                                 Fichiers jusqu'à 10MB (images, PDF, documents, etc.)
                             </p>
                         </label>
@@ -262,13 +310,13 @@ const NewTicketForm: React.FC = () => {
                     {/* Liste des fichiers sélectionnés */}
                     {attachments.length > 0 && (
                         <div className="space-y-2">
-                            <p className="text-sm font-medium text-gray-700">
+                            <p className={`text-sm font-medium ${textColorClass}`}>
                                 Fichiers sélectionnés ({attachments.length})
                             </p>
                             {attachments.map((attachment, index) => (
                                 <div
                                     key={index}
-                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                                    className={attachmentItemClass}
                                 >
                                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                                         <div className="flex-shrink-0">
@@ -279,16 +327,20 @@ const NewTicketForm: React.FC = () => {
                                                     className="h-10 w-10 object-cover rounded"
                                                 />
                                             ) : (
-                                                <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
+                                                <div className={`h-10 w-10 rounded flex items-center justify-center ${
+                                                    theme === 'dark'
+                                                        ? 'bg-gray-700'
+                                                        : 'bg-gray-200'
+                                                }`}>
                                                     {getFileIcon(attachment.file)}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium truncate text-gray-800">
+                                            <p className={`text-sm font-medium truncate ${textColorDarkClass}`}>
                                                 {attachment.file.name}
                                             </p>
-                                            <p className="text-xs text-gray-500">
+                                            <p className={`text-xs ${textMutedClass}`}>
                                                 {formatFileSize(attachment.file.size)} • {attachment.file.type}
                                             </p>
                                         </div>
@@ -298,7 +350,11 @@ const NewTicketForm: React.FC = () => {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => removeAttachment(index)}
-                                        className="flex-shrink-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                        className={`flex-shrink-0 ${
+                                            theme === 'dark'
+                                                ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/50'
+                                                : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                                        }`}
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>
