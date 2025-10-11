@@ -42,7 +42,6 @@ class TicketViewSet(viewsets.ViewSet):
         if user.is_developer:
             data = self.queryset.filter(Q(developer=user) | Q(developer__isnull=True))
         elif not user.is_staff and not user.is_developer:
-            # CORRECTION: utiliser author au lieu de user
             data = self.queryset.filter(author=user)
         else:
             data = self.queryset.all()
@@ -56,7 +55,6 @@ class TicketViewSet(viewsets.ViewSet):
     def create(self, request, *args, **kwargs):
         serializer = TicketCreateSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            # CORRECTION: utiliser author au lieu de user
             serializer.save(author=request.user)
         return Response({
             "success": True,
@@ -67,7 +65,6 @@ class TicketViewSet(viewsets.ViewSet):
         try:
             ticket = self.queryset.prefetch_related('comments').get(pk=pk)
         except Ticket.DoesNotExist as e:
-            # CORRECTION: message d'erreur plus générique
             raise serializers.ValidationError(_("Ticket non trouvé"))
 
         serializer = TicketRetrieveSerializer(instance=ticket)
@@ -81,7 +78,6 @@ class TicketViewSet(viewsets.ViewSet):
         try:
             instance = self.queryset.get(pk=pk)
         except Ticket.DoesNotExist as e:
-            # CORRECTION: message d'erreur plus générique
             raise serializers.ValidationError(_("Ticket non trouvé"))
         instance.delete()
         return Response({
@@ -127,7 +123,6 @@ class TicketViewSet(viewsets.ViewSet):
         try:
             instance = self.queryset.get(pk=pk)
         except Ticket.DoesNotExist as e:
-            # CORRECTION: message d'erreur plus générique
             raise serializers.ValidationError(_("Ticket non trouvé"))
         if request.method == 'PATCH':
             if not instance.closed_at:
@@ -144,7 +139,6 @@ class TicketViewSet(viewsets.ViewSet):
         try:
             instance = self.queryset.get(pk=pk)
         except Ticket.DoesNotExist as e:
-            # CORRECTION: message d'erreur plus générique
             raise serializers.ValidationError(_("Ticket non trouvé"))
 
         if request.method == 'PATCH':
@@ -164,7 +158,6 @@ class TicketViewSet(viewsets.ViewSet):
         try:
             instance = self.queryset.get(pk=pk)
         except Ticket.DoesNotExist as e:
-            # CORRECTION: message d'erreur plus générique
             raise serializers.ValidationError(_("Ticket non trouvé"))
 
         if request.method == 'POST':
@@ -201,7 +194,6 @@ class TicketMixinView(
         if user.is_developer:
             data = self.queryset.filter(Q(developer=user) | Q(developer__isnull=True))
         elif not user.is_staff and not user.is_developer:
-            # CORRECTION: utiliser author au lieu de user
             data = self.queryset.filter(author=user)
         else:
             data = self.queryset.all()
@@ -213,7 +205,6 @@ class TicketMixinView(
     def post(self, request, *args, **kwargs):
         serializer = TicketCreateSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            # CORRECTION: utiliser author au lieu de user
             serializer.save(author=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -232,7 +223,6 @@ class TicketRetrieveDestroyView(generics.RetrieveDestroyAPIView):
         if user.is_developer:
             data = self.queryset.filter(Q(developer=user) | Q(developer__isnull=True))
         elif not user.is_staff and not user.is_developer:
-            # CORRECTION: utiliser author au lieu de user
             data = self.queryset.filter(author=user)
         else:
             data = self.queryset.all()
@@ -244,7 +234,6 @@ class CommentCreateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins
     permission_classes = [permissions.IsAuthenticated, CommentPermission]
 
     def get_queryset(self):
-        # CORRECTION: ajouter le filtrage approprié
         user = self.request.user
         if user.is_developer:
             return self.queryset.filter(Q(developer=user) | Q(developer__isnull=True))
@@ -266,7 +255,6 @@ class CommentCreateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins
         try:
             instance = Ticket.objects.get(pk=pk)
         except Ticket.DoesNotExist as e:
-            # CORRECTION: message d'erreur plus générique
             raise serializers.ValidationError(_("Ticket non trouvé"))
 
         if request.method == 'POST':
@@ -324,7 +312,6 @@ def closed(request, pk=None):
     try:
         instance = Ticket.objects.get(pk=pk)
     except Ticket.DoesNotExist as e:
-        # CORRECTION: message d'erreur plus générique
         raise serializers.ValidationError(_("Ticket non trouvé"))
     if request.method == 'PATCH':
         if not instance.closed_at:
@@ -342,7 +329,6 @@ def setstatus(request, pk=None):
     try:
         instance = Ticket.objects.get(pk=pk)
     except Ticket.DoesNotExist as e:
-        # CORRECTION: message d'erreur plus générique
         raise serializers.ValidationError(_("Ticket non trouvé"))
 
     if request.method == 'PATCH':
