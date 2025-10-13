@@ -299,36 +299,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ticket_project.wsgi.application'
 
-# Database Configuration
-# Utilise DATABASE_URL si disponible (Render), sinon les variables séparées
-if os.environ.get('DATABASE_URL'):
-    # Production sur Render
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            ssl_require=not DEBUG
-        )
-    }
-else:
-    # Développement local
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME', default='ticket_db'),
-            'USER': config('DB_USER', default='ticket_user'),
-            'PASSWORD': config('DB_PASSWORD', default='password'),
-            'HOST': config('DB_HOST', default='localhost'),
-            'PORT': config('DB_PORT', default='5432'),
-        }
-    }
+import dj_database_url
 
-# Fallback SQLite si PostgreSQL n'est pas configuré
-if not DATABASES['default'].get('NAME'):
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=not DEBUG
+    )
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
