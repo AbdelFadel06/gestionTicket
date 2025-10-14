@@ -7,7 +7,7 @@ export const getCorrectImageUrl = (url?: string | null): string => {
   }
 
   // Construire l’URL complète depuis ton backend Django
-  const baseURL = "http://127.0.0.1:8000" // ⚡ adapte si besoin
+  const baseURL = "https://gestionticket-3.onrender.com" // ⚡ adapte si besoin
   let cleanPath = url.startsWith("/") ? url : `/${url}`
   cleanPath = cleanPath.replace(/\/+/g, "/")
 

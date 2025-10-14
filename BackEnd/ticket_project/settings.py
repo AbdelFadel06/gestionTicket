@@ -30,7 +30,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '.onrender.com'
+    '.onrender.com',
 ]
 
 # -----------------------------
@@ -62,8 +62,9 @@ INSTALLED_APPS = [
 # Middleware
 # -----------------------------
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,7 +81,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    "https://gestionticket-3.onrender.com",
 ]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://gestionticket-3.onrender.com",
+]
+
+
+CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'Content-Length', 'Content-Disposition']
 
 # -----------------------------
@@ -154,7 +164,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
