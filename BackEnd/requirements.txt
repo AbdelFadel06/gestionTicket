@@ -10,3 +10,4 @@ django-cors-headers
 django-filter
 drf-spectacular
 Pillow
+django-extensions
