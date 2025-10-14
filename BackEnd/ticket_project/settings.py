@@ -84,6 +84,18 @@ CORS_ALLOWED_ORIGINS = [
     "https://gestionticket-3.onrender.com",
 ]
 
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "https://gestionticket-3.onrender.com",
